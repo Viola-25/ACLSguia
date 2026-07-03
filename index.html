@@ -440,30 +440,30 @@
                     {/* Área de Conteúdo Principal */}
                     <div className="flex-1 bg-slate-50 hide-scrollbar flex flex-col relative">
                         {activeTab === 'procedimento' && (
-                            <div className="p-3 flex flex-col justify-center flex-1 gap-1.5 animate-fade-in">
+                            <div className="p-2 flex flex-col flex-1 gap-1 animate-fade-in min-h-0">
                                 {!diagnosis && (
-                                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-lg text-xs font-medium text-center">
+                                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-1.5 rounded-lg text-xs font-medium text-center shrink-0">
                                         <i className="fas fa-exclamation-triangle mr-1"></i>
-                                        Selecione o ritmo cardíaco para iniciar as terapias
+                                        Selecione o ritmo cardíaco
                                     </div>
                                 )}
                                 
-                                <div>
-                                    <h3 className="text-[9px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                <div className="flex-1 flex flex-col min-h-0">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
                                         {suggestedAction === 'reavaliar_ritmo' ? (
                                             <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
                                         ) : (
                                             <span className="text-slate-400">Ritmo Cardíaco</span>
                                         )}
                                     </h3>
-                                    <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="flex-1 grid grid-cols-3 gap-1 min-h-0">
                                         {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => (
                                             <button 
                                                 key={diag}
                                                 onClick={() => handleAction('diagnosis', diag)}
-                                                className={`py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : suggestedAction === 'reavaliar_ritmo' ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
+                                                className={`h-full w-full rounded-lg font-bold text-sm transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : suggestedAction === 'reavaliar_ritmo' ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
                                             >
-                                                {diag}
+                                                <span className="block leading-tight">{diag}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -471,9 +471,9 @@
 
                                 {diagnosis && (
                                     <>
-                                        <div>
-                                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Terapias</h3>
-                                            <div className="grid grid-cols-3 gap-1.5">
+                                        <div className="flex-[2] flex flex-col min-h-0">
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Terapias</h3>
+                                            <div className="flex-1 grid grid-cols-3 gap-1 min-h-0">
                                                 {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map((item, i) => {
                                                     const isAmio = item === 'Amiodarona';
                                                     const isAdr = item === 'Adrenalina';
@@ -488,7 +488,7 @@
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('therapy', item)}
-                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${blinkClass}`}
+                                                        className={`h-full w-full rounded-lg font-semibold text-xs border active:scale-95 transition-all ${blinkClass}`}
                                                     >
                                                         {isAmio ? amioLabel : item}
                                                     </button>
@@ -496,14 +496,14 @@
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Intervenções</h3>
-                                            <div className="grid grid-cols-2 gap-1.5">
+                                        <div className="flex-1 flex flex-col min-h-0">
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Intervenções</h3>
+                                            <div className="flex-1 grid grid-cols-2 gap-1 min-h-0">
                                                 {['Desfibrilação', 'IOT', 'Atropina', 'Trombolítico'].map(item => (
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('intervention', item)}
-                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Desfibrilação' ? suggestedAction === 'desfribilacao' ? 'animate-blink bg-red-500 border-red-400 text-white font-bold ring-2 ring-red-300' : 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                                                        className={`h-full w-full rounded-lg font-semibold text-xs border active:scale-95 transition-all ${item === 'Desfibrilação' ? suggestedAction === 'desfribilacao' ? 'animate-blink bg-red-500 border-red-400 text-white font-bold ring-2 ring-red-300' : 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
                                                     >
                                                         {item}
                                                     </button>

@@ -251,6 +251,7 @@
                         if (data.isRunning && data.startTime) {
                             setIsRunning(true);
                             setElapsedSecs(Math.floor((Date.now() - data.startTime) / 1000));
+                            requestWakeLock();
                         }
                         if (data.currentView === 'postCare') setCurrentView('postCare');
                         else if (data.isRunning && data.startTime) setCurrentView('procedure');

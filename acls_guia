@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ACLS Helper Pro</title>
+    <title>Guia ACLS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -12,37 +12,39 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #0f172a; /* Slate 900 */
+            background-color: #0f172a;
             -webkit-tap-highlight-color: transparent;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent body scrolling */
+            overflow: hidden;
         }
 
-        /* Animações Customizadas */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
+            animation: fadeIn 0.25s ease-out forwards;
         }
 
         @keyframes pulseSoft {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 0.8; }
         }
         .animate-pulse-soft {
-            animation: pulseSoft 0.545s infinite; /* 110bpm = 545ms */
+            animation: pulseSoft 0.545s infinite;
         }
 
-        /* Ocultar scrollbar mantendo a funcionalidade */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .timer-text {
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -51,13 +53,12 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- Constantes Globais ---
-        const CYCLE_DURATION = 120; // 2 minutos em segundos
-        const ADRENALINE_DURATION = 240; // 4 minutos para o visual do anel (geralmente aplicada a cada 3-5 min)
-        const BPM = 110;
-        const MS_PER_BEAT = 60000 / BPM;
+        const CYCLE_DURATION = 120;
+        const ADRENALINE_DURATION = 240;
+        const BPM_MIN = 60;
+        const BPM_MAX = 160;
+        const BPM_DEFAULT = 110;
 
-        // --- Funções Auxiliares ---
         const formatTime = (totalSeconds) => {
             const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
             const s = (totalSeconds % 60).toString().padStart(2, '0');
@@ -65,22 +66,20 @@
         };
 
         const getCurrentTimeStr = () => {
-            return new Date().toTimeString().split(' ')[0]; // HH:MM:SS
+            return new Date().toTimeString().split(' ')[0];
         };
 
-        // --- Componentes Reutilizáveis ---
-
         const CircularTimer = ({ label, subLabel, progress, max, colorClass, trailColorClass = "text-slate-700" }) => {
-            const radius = 38;
+            const radius = 30;
             const circumference = 2 * Math.PI * radius;
             const strokeDashoffset = circumference - (progress / max) * circumference;
 
             return (
-                <div className="flex flex-col items-center justify-center relative w-28 h-28">
+                <div className="flex flex-col items-center justify-center relative w-20 h-20">
                     <svg className="w-full h-full transform -rotate-90">
                         <circle
                             className={`${trailColorClass} stroke-current`}
-                            strokeWidth="5"
+                            strokeWidth="4"
                             fill="transparent"
                             r={radius}
                             cx="50%"
@@ -88,7 +87,7 @@
                         />
                         <circle
                             className={`${colorClass} stroke-current transition-all duration-1000 ease-linear`}
-                            strokeWidth="5"
+                            strokeWidth="4"
                             strokeLinecap="round"
                             strokeDasharray={circumference}
                             strokeDashoffset={strokeDashoffset}
@@ -98,9 +97,9 @@
                             cy="50%"
                         />
                     </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">
-                        <span className="text-2xl font-bold text-white tracking-widest leading-none drop-shadow-md">{label}</span>
-                        <span className="text-xs text-slate-300 font-medium mt-1">{subLabel}</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-lg font-bold text-white tracking-wider leading-none drop-shadow-md">{label}</span>
+                        <span className="text-[9px] text-slate-400 font-medium mt-0.5">{subLabel}</span>
                     </div>
                 </div>
             );
@@ -110,14 +109,14 @@
             if (!show) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
-                        <p className="text-slate-600 mb-6">{message}</p>
+                    <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl">
+                        <h3 className="text-lg font-bold text-slate-800 mb-2">{title}</h3>
+                        <p className="text-slate-600 text-sm mb-5">{message}</p>
                         <div className="flex justify-end space-x-3">
-                            <button onClick={onCancel} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                            <button onClick={onCancel} className="px-4 py-2 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition-colors">
                                 {cancelText}
                             </button>
-                            <button onClick={onConfirm} className={`px-5 py-2.5 rounded-xl font-semibold text-white transition-colors shadow-md ${danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                            <button onClick={onConfirm} className={`px-4 py-2 rounded-xl font-semibold text-sm text-white transition-colors shadow-md ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
                                 {confirmText}
                             </button>
                         </div>
@@ -126,13 +125,10 @@
             );
         };
 
-        // --- Componente Principal da Aplicação ---
         const App = () => {
-            // Estados de Navegação
-            const [currentView, setCurrentView] = useState('home'); // 'home', 'procedure', 'postCare'
+            const [currentView, setCurrentView] = useState('home');
             const [activeTab, setActiveTab] = useState('procedimento');
             
-            // Estados do Procedimento
             const [isRunning, setIsRunning] = useState(false);
             const [startTime, setStartTime] = useState(null);
             const [elapsedSecs, setElapsedSecs] = useState(0);
@@ -144,38 +140,32 @@
             const [causaSuspeita, setCausaSuspeita] = useState(null);
             const [events, setEvents] = useState([]);
             
-            // Estados de Controle de UI
-            const [isMuted, setIsMuted] = useState(true); // Começa mutado por padrão devido a políticas de autoplay
+            const [isMuted, setIsMuted] = useState(true);
+            const [bpm, setBpm] = useState(BPM_DEFAULT);
             const [modalConfig, setModalConfig] = useState({ show: false });
             const [tickVisual, setTickVisual] = useState(false);
 
-            // Refs
             const audioCtxRef = useRef(null);
             const metronomeIntervalRef = useRef(null);
             const timerRef = useRef(null);
 
             useEffect(() => {
                 if (isRunning) {
-                    // Loop principal do temporizador (1 segundo)
                     timerRef.current = setInterval(() => {
-                        const now = Date.now();
-                        const totalSecs = Math.floor((now - startTime) / 1000);
+                        const totalSecs = Math.floor((Date.now() - startTime) / 1000);
                         setElapsedSecs(totalSecs);
-                        
-                        // Atualiza ciclo
                         setCycleCount(Math.floor(totalSecs / CYCLE_DURATION) + 1);
                     }, 1000);
 
-                    // Loop do Metrônomo (110 BPM)
                     if (!audioCtxRef.current) {
                         const AudioContext = window.AudioContext || window.webkitAudioContext;
                         audioCtxRef.current = new AudioContext();
                     }
 
+                    const ms = 60000 / bpm;
                     metronomeIntervalRef.current = setInterval(() => {
-                        setTickVisual(prev => !prev); // Feedback visual
+                        setTickVisual(prev => !prev);
                         
-                        // Tocar som se não estiver mutado
                         if (!isMuted && audioCtxRef.current && audioCtxRef.current.state === 'running') {
                             try {
                                 const osc = audioCtxRef.current.createOscillator();
@@ -194,7 +184,7 @@
                                 osc.stop(audioCtxRef.current.currentTime + 0.1);
                             } catch (e) { console.error("Audio error", e); }
                         }
-                    }, MS_PER_BEAT);
+                    }, ms);
 
                 } else {
                     clearInterval(timerRef.current);
@@ -205,9 +195,8 @@
                     clearInterval(timerRef.current);
                     clearInterval(metronomeIntervalRef.current);
                 };
-            }, [isRunning, startTime, isMuted]);
+            }, [isRunning, startTime, isMuted, bpm]);
 
-            // Valores calculados baseados no tempo total
             const cycleSeconds = elapsedSecs % CYCLE_DURATION;
             const adrenalineSeconds = lastAdrenalineTime 
                 ? Math.floor((Date.now() - lastAdrenalineTime) / 1000) 
@@ -229,10 +218,10 @@
             const handleStartProcedure = () => {
                 const now = Date.now();
                 setStartTime(now);
-                setLastAdrenalineTime(now); // Inicia o contador de adrenalina junto
+                setLastAdrenalineTime(now);
                 setIsRunning(true);
                 setCurrentView('procedure');
-                setEvents([]); // Limpa eventos anteriores se houver
+                setEvents([]);
                 setDiagnosis(null);
                 setCausaSuspeita(null);
                 setElapsedSecs(0);
@@ -240,7 +229,6 @@
                 
                 logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`);
                 
-                // Tenta retomar audio context se interação do usuário
                 if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
                     audioCtxRef.current.resume();
                 }
@@ -297,21 +285,20 @@
             };
 
             const handleSaveComplete = () => {
-                // Aqui simularia salvar no banco de dados
                 setCurrentView('home');
                 setEvents([]);
             };
 
             const renderHome = () => (
                 <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
-                    <header className="bg-slate-900 text-white p-5 flex justify-between items-center shadow-lg z-10">
-                        <button className="text-slate-300 hover:text-white transition-colors"><i className="fas fa-bars text-xl"></i></button>
-                        <h1 className="text-xl font-bold tracking-wide"><span className="text-red-500">ACLS</span> Helper</h1>
-                        <div className="w-6"></div> {/* Spacer */}
+                    <header className="bg-slate-800 text-white p-5 flex justify-between items-center shadow-lg z-10">
+                        <button className="text-slate-400 hover:text-white transition-colors"><i className="fas fa-bars text-xl"></i></button>
+                        <h1 className="text-xl font-bold tracking-wide"><span className="text-blue-400">Guia</span> <span className="text-white">ACLS</span></h1>
+                        <div className="w-6"></div>
                     </header>
                     
                     <div className="flex bg-white shadow-sm z-0">
-                        <button className="flex-1 py-4 font-bold text-red-600 border-b-2 border-red-600 bg-red-50/30">RCPs</button>
+                        <button className="flex-1 py-4 font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50/30">RCPs</button>
                         <button className="flex-1 py-4 font-semibold text-slate-400 hover:text-slate-600 transition-colors">Estatísticas</button>
                     </div>
                     
@@ -326,7 +313,7 @@
                     <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
                         <button 
                             onClick={handleStartProcedure} 
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition-all active:scale-95 text-lg flex items-center justify-center gap-3"
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] transition-all active:scale-95 text-lg flex items-center justify-center gap-3"
                         >
                             <i className="fas fa-play"></i> Iniciar RCP
                         </button>
@@ -335,21 +322,21 @@
             );
 
             const renderProcedure = () => (
-                <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative overflow-hidden">
+                <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative">
                     
-                    {/* Header: Temporizadores */}
-                    <div className="flex justify-between items-center px-6 pt-10 pb-6 bg-slate-900">
+                    {/* Topo: Temporizadores + Diagnóstico */}
+                    <div className="flex items-center px-4 pt-3 pb-2 bg-slate-900 gap-3">
                         <CircularTimer 
                             label={formatTime(cycleSeconds)} 
                             subLabel={`Ciclo ${cycleCount}`} 
                             progress={cycleSeconds} 
                             max={CYCLE_DURATION} 
-                            colorClass={cycleSeconds > 100 ? "text-orange-500" : "text-emerald-400"} 
+                            colorClass={cycleSeconds > 100 ? "text-orange-400" : "text-emerald-400"} 
                         />
                         
-                        <div className="text-center flex-1 px-2">
-                            <div className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-2">Diagnóstico Atual</div>
-                            <div className="text-lg font-bold text-white bg-slate-800 py-1.5 px-3 rounded-lg inline-block border border-slate-700 shadow-inner">
+                        <div className="flex-1 text-center">
+                            <div className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">Diagnóstico</div>
+                            <div className={`text-sm font-bold py-1.5 px-2 rounded-lg border leading-tight ${diagnosis ? 'text-white bg-slate-800 border-slate-600' : 'text-slate-400 bg-slate-800 border-slate-700'}`}>
                                 {diagnosis || "Analisando..."}
                             </div>
                         </div>
@@ -359,48 +346,55 @@
                             subLabel="Adrenalina" 
                             progress={adrenalineSeconds % ADRENALINE_DURATION} 
                             max={ADRENALINE_DURATION} 
-                            colorClass={adrenalineSeconds > 180 ? "text-red-500" : "text-blue-400"} 
+                            colorClass={adrenalineSeconds > 180 ? "text-red-400" : "text-blue-400"} 
                         />
                     </div>
                     
-                    {/* Barra de Tempo Total */}
-                    <div className="bg-slate-950 text-center py-2 shadow-inner border-y border-slate-800">
-                        <span className="font-mono text-2xl text-slate-300 font-light tracking-widest">{formatTime(elapsedSecs)}</span>
+                    {/* Tempo Total */}
+                    <div className="bg-slate-950 text-center py-1 border-y border-slate-800">
+                        <span className="font-mono text-lg text-slate-300 font-light tracking-widest timer-text">{formatTime(elapsedSecs)}</span>
                     </div>
                     
-                    {/* Barra de Controle (Som, Finalizar, BPM) */}
-                    <div className="flex bg-slate-100 z-10 shadow-md relative">
-                        <button onClick={handleToggleMute} className={`flex-1 py-4 text-xl border-r border-slate-200 transition-colors ${isMuted ? 'text-slate-400 bg-slate-50' : 'text-blue-600 bg-white'}`}>
+                    {/* Barra de Controles: Mudo | BPM | Finalizar */}
+                    <div className="flex bg-slate-800 items-stretch">
+                        <button onClick={handleToggleMute} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-r border-slate-700 transition-colors ${isMuted ? 'text-slate-500 bg-slate-800' : 'text-blue-400 bg-slate-700'}`}>
                             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+                            <span>{isMuted ? 'Mudo' : 'Som'}</span>
                         </button>
-                        <button onClick={requestFinish} className="flex-[2] py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-lg transition-colors shadow-inner">
-                            Finalizar RCP
-                        </button>
-                        <div className={`flex-1 py-4 text-center font-bold border-l border-slate-200 bg-slate-50 flex items-center justify-center gap-2 ${tickVisual ? 'text-red-600' : 'text-slate-400'}`}>
-                            <i className="fas fa-heartbeat"></i> 110
+                        <div className="flex items-center gap-0.5 px-2 border-r border-slate-700">
+                            <button onClick={() => setBpm(p => Math.max(BPM_MIN, p - 5))} className="text-slate-400 hover:text-white w-6 h-6 flex items-center justify-center rounded hover:bg-slate-700 transition-colors text-xs">
+                                <i className="fas fa-minus"></i>
+                            </button>
+                            <span className={`text-sm font-bold min-w-[32px] text-center transition-colors ${tickVisual ? 'text-emerald-400' : 'text-white'}`}>{bpm}</span>
+                            <button onClick={() => setBpm(p => Math.min(BPM_MAX, p + 5))} className="text-slate-400 hover:text-white w-6 h-6 flex items-center justify-center rounded hover:bg-slate-700 transition-colors text-xs">
+                                <i className="fas fa-plus"></i>
+                            </button>
+                            <span className="text-[9px] text-slate-500 font-medium ml-0.5">BPM</span>
                         </div>
+                        <button onClick={requestFinish} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+                            <i className="fas fa-stop-circle"></i> Finalizar RCP
+                        </button>
                     </div>
                     
-                    {/* Área de Conteúdo Principal (Scrollable) */}
-                    <div className="flex-1 overflow-y-auto bg-slate-50 hide-scrollbar relative">
-                        {/* Aba: Procedimento */}
+                    {/* Área de Conteúdo Principal */}
+                    <div className="flex-1 bg-slate-50 hide-scrollbar flex flex-col relative">
                         {activeTab === 'procedimento' && (
-                            <div className="p-5 space-y-8 animate-fade-in pb-24">
+                            <div className="p-3 flex flex-col justify-center flex-1 gap-1.5 animate-fade-in">
                                 {!diagnosis && (
-                                    <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl text-center shadow-sm font-medium">
-                                        <i className="fas fa-exclamation-triangle mr-2"></i>
-                                        Verifique o primeiro diagnóstico para iniciar.
+                                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-lg text-xs font-medium text-center">
+                                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                                        Selecione o ritmo cardíaco para iniciar as terapias
                                     </div>
                                 )}
                                 
                                 <div>
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-stethoscope"></i> Diagnósticos</h3>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ritmo Cardíaco</h3>
+                                    <div className="grid grid-cols-3 gap-1.5">
                                         {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => (
                                             <button 
                                                 key={diag}
                                                 onClick={() => handleAction('diagnosis', diag)}
-                                                className={`py-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 border ${diagnosis === diag ? 'bg-red-600 text-white border-red-700 shadow-md shadow-red-600/30 ring-2 ring-red-400 ring-offset-1' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                                className={`py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
                                             >
                                                 {diag}
                                             </button>
@@ -410,14 +404,14 @@
 
                                 {diagnosis && (
                                     <>
-                                        <div className="animate-fade-in">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-pills"></i> Terapias</h3>
-                                            <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Terapias</h3>
+                                            <div className="grid grid-cols-3 gap-1.5">
                                                 {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map(item => (
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('therapy', item)}
-                                                        className={`py-3.5 bg-white border text-slate-700 rounded-xl font-semibold text-sm shadow-sm hover:bg-slate-50 active:scale-95 transition-transform ${item === 'Adrenalina' ? 'border-blue-300 text-blue-700 bg-blue-50/50' : 'border-slate-200'}`}
+                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Adrenalina' ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold hover:bg-blue-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
                                                     >
                                                         {item}
                                                     </button>
@@ -425,14 +419,14 @@
                                             </div>
                                         </div>
 
-                                        <div className="animate-fade-in">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-bolt"></i> Intervenções</h3>
-                                            <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Intervenções</h3>
+                                            <div className="grid grid-cols-2 gap-1.5">
                                                 {['Desfibrilação', 'IOT', 'Atropina', 'Trombolítico'].map(item => (
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('intervention', item)}
-                                                        className={`py-3.5 rounded-xl font-semibold text-sm shadow-sm active:scale-95 transition-transform border ${item === 'Desfibrilação' ? 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Desfibrilação' ? 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
                                                     >
                                                         {item}
                                                     </button>
@@ -444,26 +438,25 @@
                             </div>
                         )}
 
-                        {/* Aba: Relatório */}
                         {activeTab === 'relatorio' && (
-                            <div className="animate-fade-in pb-24">
+                            <div className="flex-1 overflow-y-auto animate-fade-in hide-scrollbar">
                                 {events.length === 0 ? (
-                                    <div className="p-10 text-center text-slate-400 font-medium">Nenhum evento registrado ainda.</div>
+                                    <div className="p-8 text-center text-slate-400 font-medium text-sm">Nenhum evento registrado ainda.</div>
                                 ) : (
                                     <div className="divide-y divide-slate-100">
                                         {events.map((ev, idx) => (
-                                            <div key={ev.id} className="flex items-start p-4 bg-white hover:bg-slate-50 transition-colors">
-                                                <div className="flex flex-col items-center justify-center w-12 shrink-0 pt-1">
-                                                    <span className={`text-xl font-black ${ev.type === 'system' ? 'text-emerald-500' : 'text-blue-500'}`}>{events.length - idx}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 mt-1">{ev.absoluteTime.slice(0,5)}</span>
+                                            <div key={ev.id} className="flex items-start p-3 bg-white hover:bg-slate-50 transition-colors">
+                                                <div className="flex flex-col items-center justify-center w-10 shrink-0">
+                                                    <span className={`text-base font-black ${ev.type === 'system' ? 'text-emerald-500' : 'text-blue-500'}`}>{events.length - idx}</span>
+                                                    <span className="text-[9px] font-bold text-slate-400">{ev.absoluteTime.slice(0,5)}</span>
                                                 </div>
-                                                <div className="ml-4 flex-1 pt-1">
-                                                    <h4 className="text-slate-800 font-bold text-sm">{ev.title}</h4>
-                                                    <p className="text-xs text-slate-500 mt-1 font-medium">{ev.description}</p>
+                                                <div className="ml-3 flex-1">
+                                                    <h4 className="text-slate-800 font-bold text-xs">{ev.title}</h4>
+                                                    <p className="text-[10px] text-slate-500 mt-0.5 font-medium">{ev.description}</p>
                                                 </div>
                                                 {ev.type !== 'system' && (
-                                                    <button onClick={() => confirmDeleteEvent(ev.id)} className="p-3 text-slate-300 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
-                                                        <i className="fas fa-trash-alt"></i>
+                                                    <button onClick={() => confirmDeleteEvent(ev.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
+                                                        <i className="fas fa-trash-alt text-xs"></i>
                                                     </button>
                                                 )}
                                             </div>
@@ -473,41 +466,40 @@
                             </div>
                         )}
 
-                        {/* Aba: Causa */}
                         {activeTab === 'causa' && (
-                            <div className="p-5 space-y-8 animate-fade-in pb-24">
-                                <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm font-medium shadow-sm border border-blue-100">
+                            <div className="flex-1 overflow-y-auto p-3 animate-fade-in hide-scrollbar pb-20">
+                                <div className="bg-blue-50 text-blue-800 p-3 rounded-xl text-xs font-medium shadow-sm border border-blue-100">
                                     Selecione a possível causa reversível para visualizar orientações no pós-RCP.
                                 </div>
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2">Causas Reversíveis (H's)</h3>
-                                    <div className="grid grid-cols-1 gap-2.5">
+                                <div className="mt-3">
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
+                                    <div className="space-y-1.5">
                                         {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
                                             <button 
                                                 key={causa} 
                                                 onClick={() => setCausaSuspeita(causa)}
-                                                className={`py-3.5 px-5 text-left rounded-xl font-semibold border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
                                             >
                                                 <div className="flex justify-between items-center">
                                                     <span>{causa}</span>
-                                                    {causaSuspeita === causa && <i className="fas fa-check-circle"></i>}
+                                                    {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
                                                 </div>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2">Causas Reversíveis (T's)</h3>
-                                    <div className="grid grid-cols-1 gap-2.5">
+                                <div className="mt-3">
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
+                                    <div className="space-y-1.5">
                                         {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
                                             <button 
                                                 key={causa} 
                                                 onClick={() => setCausaSuspeita(causa)}
-                                                className={`py-3.5 px-5 text-left rounded-xl font-semibold border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
                                             >
                                                 <div className="flex justify-between items-center">
                                                     <span>{causa}</span>
-                                                    {causaSuspeita === causa && <i className="fas fa-check-circle"></i>}
+                                                    {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
                                                 </div>
                                             </button>
                                         ))}
@@ -517,8 +509,8 @@
                         )}
                     </div>
                     
-                    {/* Bottom Navigation */}
-                    <div className="absolute bottom-0 w-full flex bg-slate-900 text-slate-400 text-xs font-bold uppercase tracking-wider pb-safe border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
+                    {/* Navegação Inferior */}
+                    <div className="flex bg-slate-900 text-slate-500 text-[10px] font-bold uppercase tracking-wider pb-safe border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
                         {[
                             { id: 'procedimento', label: 'Procedimento', icon: 'fa-stethoscope' }, 
                             { id: 'relatorio', label: 'Relatório', icon: 'fa-list-alt' }, 
@@ -527,11 +519,11 @@
                             <button 
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 py-4 flex flex-col items-center gap-1.5 relative transition-colors ${activeTab === tab.id ? 'text-white' : 'hover:text-slate-200'}`}
+                                className={`flex-1 py-3 flex flex-col items-center gap-1 relative transition-colors ${activeTab === tab.id ? 'text-white' : 'hover:text-slate-300'}`}
                             >
-                                <i className={`fas ${tab.icon} text-lg ${activeTab === tab.id ? 'text-red-500' : ''}`}></i>
+                                <i className={`fas ${tab.icon} text-sm ${activeTab === tab.id ? 'text-blue-400' : ''}`}></i>
                                 <span>{tab.label}</span>
-                                {activeTab === tab.id && <div className="absolute top-0 left-0 right-0 h-1 bg-red-600 rounded-b-md mx-6 shadow-[0_0_8px_rgba(220,38,38,0.8)]"></div>}
+                                {activeTab === tab.id && <div className="absolute top-0 left-3 right-3 h-0.5 bg-blue-500 rounded-b-md"></div>}
                             </button>
                         ))}
                     </div>
@@ -540,7 +532,7 @@
 
             const renderPostCare = () => (
                 <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
-                    <header className="bg-slate-900 text-white p-5 flex items-center shadow-md z-10">
+                    <header className="bg-slate-800 text-white p-5 flex items-center shadow-md z-10">
                         <button onClick={() => setCurrentView('home')} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
                             <i className="fas fa-times text-xl"></i>
                         </button>
@@ -582,7 +574,7 @@
                     <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
                         <button 
                             onClick={handleSaveComplete} 
-                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2"
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2"
                         >
                             <i className="fas fa-save"></i> Salvar Relatório
                         </button>
@@ -601,7 +593,6 @@
             );
         };
 
-        // Renderizar a aplicação
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>

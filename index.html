@@ -400,11 +400,14 @@
                 });
             };
 
-            const generateReportText = () => {
-                const dateStr = new Date().toLocaleDateString('pt-BR') + ' ' + getCurrentTimeStr().slice(0,5);
+            const generateReportText = (srcEvents, srcDate) => {
+                const dateStr = srcDate
+                    ? new Date(srcDate).toLocaleDateString('pt-BR') + ' ' + new Date(srcDate).toTimeString().slice(0,5)
+                    : new Date().toLocaleDateString('pt-BR') + ' ' + getCurrentTimeStr().slice(0,5);
+                const items = srcEvents || events;
                 const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
                 const cycleMap = {};
-                events.forEach(ev => {
+                items.forEach(ev => {
                     if (ev.type === 'system') return;
                     const c = ev.cycle || 1;
                     if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
@@ -1075,6 +1078,14 @@
                             <div className="w-8"></div>
                         </header>
                         <div className="flex-1 overflow-y-auto hide-scrollbar">
+                            <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
+                                <button onClick={() => { const t = generateReportText(rep.events, rep.date); navigator.clipboard.writeText(t).catch(() => {}); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i className="fas fa-copy"></i> Copiar
+                                </button>
+                                <button onClick={() => { const t = generateReportText(rep.events, rep.date); const b = new Blob([t], {type:'text/plain;charset=utf-8'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `relatorio_acls_${rep.date.slice(0,10)}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i className="fas fa-download"></i> Baixar .txt
+                                </button>
+                            </div>
                             <table className="w-full text-xs">
                                 <thead className="bg-slate-100 sticky top-0 z-10">
                                     <tr className="border-b border-slate-200">

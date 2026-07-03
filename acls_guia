@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ACLS Helper Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0f172a; /* Slate 900 */
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent body scrolling */
+        }
+
+        /* Animações Customizadas */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes pulseSoft {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .animate-pulse-soft {
+            animation: pulseSoft 0.545s infinite; /* 110bpm = 545ms */
+        }
+
+        /* Ocultar scrollbar mantendo a funcionalidade */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800">
+    <div id="root" class="h-screen w-screen flex justify-center bg-black"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Constantes Globais ---
+        const CYCLE_DURATION = 120; // 2 minutos em segundos
+        const ADRENALINE_DURATION = 240; // 4 minutos para o visual do anel (geralmente aplicada a cada 3-5 min)
+        const BPM = 110;
+        const MS_PER_BEAT = 60000 / BPM;
+
+        // --- Funções Auxiliares ---
+        const formatTime = (totalSeconds) => {
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        };
+
+        const getCurrentTimeStr = () => {
+            return new Date().toTimeString().split(' ')[0]; // HH:MM:SS
+        };
+
+        // --- Componentes Reutilizáveis ---
+
+        const CircularTimer = ({ label, subLabel, progress, max, colorClass, trailColorClass = "text-slate-700" }) => {
+            const radius = 38;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (progress / max) * circumference;
+
+            return (
+                <div className="flex flex-col items-center justify-center relative w-28 h-28">
+                    <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                            className={`${trailColorClass} stroke-current`}
+                            strokeWidth="5"
+                            fill="transparent"
+                            r={radius}
+                            cx="50%"
+                            cy="50%"
+                        />
+                        <circle
+                            className={`${colorClass} stroke-current transition-all duration-1000 ease-linear`}
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            fill="transparent"
+                            r={radius}
+                            cx="50%"
+                            cy="50%"
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">
+                        <span className="text-2xl font-bold text-white tracking-widest leading-none drop-shadow-md">{label}</span>
+                        <span className="text-xs text-slate-300 font-medium mt-1">{subLabel}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const Modal = ({ show, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", danger = false }) => {
+            if (!show) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
+                        <p className="text-slate-600 mb-6">{message}</p>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={onCancel} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                                {cancelText}
+                            </button>
+                            <button onClick={onConfirm} className={`px-5 py-2.5 rounded-xl font-semibold text-white transition-colors shadow-md ${danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                                {confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Componente Principal da Aplicação ---
+        const App = () => {
+            // Estados de Navegação
+            const [currentView, setCurrentView] = useState('home'); // 'home', 'procedure', 'postCare'
+            const [activeTab, setActiveTab] = useState('procedimento');
+            
+            // Estados do Procedimento
+            const [isRunning, setIsRunning] = useState(false);
+            const [startTime, setStartTime] = useState(null);
+            const [elapsedSecs, setElapsedSecs] = useState(0);
+            
+            const [cycleCount, setCycleCount] = useState(0);
+            const [lastAdrenalineTime, setLastAdrenalineTime] = useState(null);
+            
+            const [diagnosis, setDiagnosis] = useState(null);
+            const [causaSuspeita, setCausaSuspeita] = useState(null);
+            const [events, setEvents] = useState([]);
+            
+            // Estados de Controle de UI
+            const [isMuted, setIsMuted] = useState(true); // Começa mutado por padrão devido a políticas de autoplay
+            const [modalConfig, setModalConfig] = useState({ show: false });
+            const [tickVisual, setTickVisual] = useState(false);
+
+            // Refs
+            const audioCtxRef = useRef(null);
+            const metronomeIntervalRef = useRef(null);
+            const timerRef = useRef(null);
+
+            useEffect(() => {
+                if (isRunning) {
+                    // Loop principal do temporizador (1 segundo)
+                    timerRef.current = setInterval(() => {
+                        const now = Date.now();
+                        const totalSecs = Math.floor((now - startTime) / 1000);
+                        setElapsedSecs(totalSecs);
+                        
+                        // Atualiza ciclo
+                        setCycleCount(Math.floor(totalSecs / CYCLE_DURATION) + 1);
+                    }, 1000);
+
+                    // Loop do Metrônomo (110 BPM)
+                    if (!audioCtxRef.current) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        audioCtxRef.current = new AudioContext();
+                    }
+
+                    metronomeIntervalRef.current = setInterval(() => {
+                        setTickVisual(prev => !prev); // Feedback visual
+                        
+                        // Tocar som se não estiver mutado
+                        if (!isMuted && audioCtxRef.current && audioCtxRef.current.state === 'running') {
+                            try {
+                                const osc = audioCtxRef.current.createOscillator();
+                                const gain = audioCtxRef.current.createGain();
+                                osc.connect(gain);
+                                gain.connect(audioCtxRef.current.destination);
+                                
+                                osc.type = 'sine';
+                                osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
+                                
+                                gain.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
+                                gain.gain.linearRampToValueAtTime(0.05, audioCtxRef.current.currentTime + 0.01);
+                                gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.1);
+                                
+                                osc.start(audioCtxRef.current.currentTime);
+                                osc.stop(audioCtxRef.current.currentTime + 0.1);
+                            } catch (e) { console.error("Audio error", e); }
+                        }
+                    }, MS_PER_BEAT);
+
+                } else {
+                    clearInterval(timerRef.current);
+                    clearInterval(metronomeIntervalRef.current);
+                }
+
+                return () => {
+                    clearInterval(timerRef.current);
+                    clearInterval(metronomeIntervalRef.current);
+                };
+            }, [isRunning, startTime, isMuted]);
+
+            // Valores calculados baseados no tempo total
+            const cycleSeconds = elapsedSecs % CYCLE_DURATION;
+            const adrenalineSeconds = lastAdrenalineTime 
+                ? Math.floor((Date.now() - lastAdrenalineTime) / 1000) 
+                : elapsedSecs;
+
+            const logEvent = (type, title, description = '') => {
+                const nowStr = getCurrentTimeStr();
+                const elapsedStr = formatTime(elapsedSecs);
+                setEvents(prev => [{
+                    id: Date.now(),
+                    type,
+                    title,
+                    description,
+                    absoluteTime: nowStr,
+                    elapsedTime: elapsedStr
+                }, ...prev]);
+            };
+
+            const handleStartProcedure = () => {
+                const now = Date.now();
+                setStartTime(now);
+                setLastAdrenalineTime(now); // Inicia o contador de adrenalina junto
+                setIsRunning(true);
+                setCurrentView('procedure');
+                setEvents([]); // Limpa eventos anteriores se houver
+                setDiagnosis(null);
+                setCausaSuspeita(null);
+                setElapsedSecs(0);
+                setCycleCount(1);
+                
+                logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`);
+                
+                // Tenta retomar audio context se interação do usuário
+                if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+            };
+
+            const handleAction = (category, item) => {
+                const actionVerb = category === 'diagnosis' ? 'Diagnosticado' : 'Executado';
+                logEvent('action', `${actionVerb} ${item}`, `${formatTime(elapsedSecs)} de procedimento`);
+                
+                if (category === 'diagnosis') {
+                    setDiagnosis(item);
+                } else if (item === 'Adrenalina') {
+                    setLastAdrenalineTime(Date.now());
+                }
+            };
+
+            const confirmDeleteEvent = (id) => {
+                setModalConfig({
+                    show: true,
+                    title: 'Remover Evento',
+                    message: 'Deseja realmente remover este registro do relatório?',
+                    confirmText: 'Remover',
+                    danger: true,
+                    onConfirm: () => {
+                        setEvents(prev => prev.filter(e => e.id !== id));
+                        setModalConfig({ show: false });
+                    },
+                    onCancel: () => setModalConfig({ show: false })
+                });
+            };
+
+            const requestFinish = () => {
+                setModalConfig({
+                    show: true,
+                    title: 'Finalizar RCP',
+                    message: 'Deseja realmente finalizar as compressões e seguir para os cuidados pós-RCP?',
+                    confirmText: 'Finalizar',
+                    danger: true,
+                    onConfirm: () => {
+                        setIsRunning(false);
+                        logEvent('system', 'Procedimento finalizado', `Duração total: ${formatTime(elapsedSecs)}`);
+                        setCurrentView('postCare');
+                        setModalConfig({ show: false });
+                    },
+                    onCancel: () => setModalConfig({ show: false })
+                });
+            };
+
+            const handleToggleMute = () => {
+                if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+                setIsMuted(!isMuted);
+            };
+
+            const handleSaveComplete = () => {
+                // Aqui simularia salvar no banco de dados
+                setCurrentView('home');
+                setEvents([]);
+            };
+
+            const renderHome = () => (
+                <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
+                    <header className="bg-slate-900 text-white p-5 flex justify-between items-center shadow-lg z-10">
+                        <button className="text-slate-300 hover:text-white transition-colors"><i className="fas fa-bars text-xl"></i></button>
+                        <h1 className="text-xl font-bold tracking-wide"><span className="text-red-500">ACLS</span> Helper</h1>
+                        <div className="w-6"></div> {/* Spacer */}
+                    </header>
+                    
+                    <div className="flex bg-white shadow-sm z-0">
+                        <button className="flex-1 py-4 font-bold text-red-600 border-b-2 border-red-600 bg-red-50/30">RCPs</button>
+                        <button className="flex-1 py-4 font-semibold text-slate-400 hover:text-slate-600 transition-colors">Estatísticas</button>
+                    </div>
+                    
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+                        <div className="w-28 h-28 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-300 shadow-inner">
+                            <i className="fas fa-file-medical-alt text-5xl"></i>
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-700 mb-2">Nenhum Registro</h2>
+                        <p className="text-slate-500">Não existem procedimentos de RCP realizados recentemente.</p>
+                    </div>
+                    
+                    <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                        <button 
+                            onClick={handleStartProcedure} 
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition-all active:scale-95 text-lg flex items-center justify-center gap-3"
+                        >
+                            <i className="fas fa-play"></i> Iniciar RCP
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderProcedure = () => (
+                <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative overflow-hidden">
+                    
+                    {/* Header: Temporizadores */}
+                    <div className="flex justify-between items-center px-6 pt-10 pb-6 bg-slate-900">
+                        <CircularTimer 
+                            label={formatTime(cycleSeconds)} 
+                            subLabel={`Ciclo ${cycleCount}`} 
+                            progress={cycleSeconds} 
+                            max={CYCLE_DURATION} 
+                            colorClass={cycleSeconds > 100 ? "text-orange-500" : "text-emerald-400"} 
+                        />
+                        
+                        <div className="text-center flex-1 px-2">
+                            <div className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-2">Diagnóstico Atual</div>
+                            <div className="text-lg font-bold text-white bg-slate-800 py-1.5 px-3 rounded-lg inline-block border border-slate-700 shadow-inner">
+                                {diagnosis || "Analisando..."}
+                            </div>
+                        </div>
+                        
+                        <CircularTimer 
+                            label={formatTime(adrenalineSeconds)} 
+                            subLabel="Adrenalina" 
+                            progress={adrenalineSeconds % ADRENALINE_DURATION} 
+                            max={ADRENALINE_DURATION} 
+                            colorClass={adrenalineSeconds > 180 ? "text-red-500" : "text-blue-400"} 
+                        />
+                    </div>
+                    
+                    {/* Barra de Tempo Total */}
+                    <div className="bg-slate-950 text-center py-2 shadow-inner border-y border-slate-800">
+                        <span className="font-mono text-2xl text-slate-300 font-light tracking-widest">{formatTime(elapsedSecs)}</span>
+                    </div>
+                    
+                    {/* Barra de Controle (Som, Finalizar, BPM) */}
+                    <div className="flex bg-slate-100 z-10 shadow-md relative">
+                        <button onClick={handleToggleMute} className={`flex-1 py-4 text-xl border-r border-slate-200 transition-colors ${isMuted ? 'text-slate-400 bg-slate-50' : 'text-blue-600 bg-white'}`}>
+                            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+                        </button>
+                        <button onClick={requestFinish} className="flex-[2] py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-lg transition-colors shadow-inner">
+                            Finalizar RCP
+                        </button>
+                        <div className={`flex-1 py-4 text-center font-bold border-l border-slate-200 bg-slate-50 flex items-center justify-center gap-2 ${tickVisual ? 'text-red-600' : 'text-slate-400'}`}>
+                            <i className="fas fa-heartbeat"></i> 110
+                        </div>
+                    </div>
+                    
+                    {/* Área de Conteúdo Principal (Scrollable) */}
+                    <div className="flex-1 overflow-y-auto bg-slate-50 hide-scrollbar relative">
+                        {/* Aba: Procedimento */}
+                        {activeTab === 'procedimento' && (
+                            <div className="p-5 space-y-8 animate-fade-in pb-24">
+                                {!diagnosis && (
+                                    <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl text-center shadow-sm font-medium">
+                                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                                        Verifique o primeiro diagnóstico para iniciar.
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-stethoscope"></i> Diagnósticos</h3>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => (
+                                            <button 
+                                                key={diag}
+                                                onClick={() => handleAction('diagnosis', diag)}
+                                                className={`py-4 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 border ${diagnosis === diag ? 'bg-red-600 text-white border-red-700 shadow-md shadow-red-600/30 ring-2 ring-red-400 ring-offset-1' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                            >
+                                                {diag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {diagnosis && (
+                                    <>
+                                        <div className="animate-fade-in">
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-pills"></i> Terapias</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map(item => (
+                                                    <button 
+                                                        key={item}
+                                                        onClick={() => handleAction('therapy', item)}
+                                                        className={`py-3.5 bg-white border text-slate-700 rounded-xl font-semibold text-sm shadow-sm hover:bg-slate-50 active:scale-95 transition-transform ${item === 'Adrenalina' ? 'border-blue-300 text-blue-700 bg-blue-50/50' : 'border-slate-200'}`}
+                                                    >
+                                                        {item}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="animate-fade-in">
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2"><i className="fas fa-bolt"></i> Intervenções</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {['Desfibrilação', 'IOT', 'Atropina', 'Trombolítico'].map(item => (
+                                                    <button 
+                                                        key={item}
+                                                        onClick={() => handleAction('intervention', item)}
+                                                        className={`py-3.5 rounded-xl font-semibold text-sm shadow-sm active:scale-95 transition-transform border ${item === 'Desfibrilação' ? 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                                                    >
+                                                        {item}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Aba: Relatório */}
+                        {activeTab === 'relatorio' && (
+                            <div className="animate-fade-in pb-24">
+                                {events.length === 0 ? (
+                                    <div className="p-10 text-center text-slate-400 font-medium">Nenhum evento registrado ainda.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100">
+                                        {events.map((ev, idx) => (
+                                            <div key={ev.id} className="flex items-start p-4 bg-white hover:bg-slate-50 transition-colors">
+                                                <div className="flex flex-col items-center justify-center w-12 shrink-0 pt-1">
+                                                    <span className={`text-xl font-black ${ev.type === 'system' ? 'text-emerald-500' : 'text-blue-500'}`}>{events.length - idx}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 mt-1">{ev.absoluteTime.slice(0,5)}</span>
+                                                </div>
+                                                <div className="ml-4 flex-1 pt-1">
+                                                    <h4 className="text-slate-800 font-bold text-sm">{ev.title}</h4>
+                                                    <p className="text-xs text-slate-500 mt-1 font-medium">{ev.description}</p>
+                                                </div>
+                                                {ev.type !== 'system' && (
+                                                    <button onClick={() => confirmDeleteEvent(ev.id)} className="p-3 text-slate-300 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
+                                                        <i className="fas fa-trash-alt"></i>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Aba: Causa */}
+                        {activeTab === 'causa' && (
+                            <div className="p-5 space-y-8 animate-fade-in pb-24">
+                                <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm font-medium shadow-sm border border-blue-100">
+                                    Selecione a possível causa reversível para visualizar orientações no pós-RCP.
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2">Causas Reversíveis (H's)</h3>
+                                    <div className="grid grid-cols-1 gap-2.5">
+                                        {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
+                                            <button 
+                                                key={causa} 
+                                                onClick={() => setCausaSuspeita(causa)}
+                                                className={`py-3.5 px-5 text-left rounded-xl font-semibold border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <span>{causa}</span>
+                                                    {causaSuspeita === causa && <i className="fas fa-check-circle"></i>}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2">Causas Reversíveis (T's)</h3>
+                                    <div className="grid grid-cols-1 gap-2.5">
+                                        {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
+                                            <button 
+                                                key={causa} 
+                                                onClick={() => setCausaSuspeita(causa)}
+                                                className={`py-3.5 px-5 text-left rounded-xl font-semibold border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <span>{causa}</span>
+                                                    {causaSuspeita === causa && <i className="fas fa-check-circle"></i>}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Bottom Navigation */}
+                    <div className="absolute bottom-0 w-full flex bg-slate-900 text-slate-400 text-xs font-bold uppercase tracking-wider pb-safe border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
+                        {[
+                            { id: 'procedimento', label: 'Procedimento', icon: 'fa-stethoscope' }, 
+                            { id: 'relatorio', label: 'Relatório', icon: 'fa-list-alt' }, 
+                            { id: 'causa', label: 'Causa', icon: 'fa-search' }
+                        ].map(tab => (
+                            <button 
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex-1 py-4 flex flex-col items-center gap-1.5 relative transition-colors ${activeTab === tab.id ? 'text-white' : 'hover:text-slate-200'}`}
+                            >
+                                <i className={`fas ${tab.icon} text-lg ${activeTab === tab.id ? 'text-red-500' : ''}`}></i>
+                                <span>{tab.label}</span>
+                                {activeTab === tab.id && <div className="absolute top-0 left-0 right-0 h-1 bg-red-600 rounded-b-md mx-6 shadow-[0_0_8px_rgba(220,38,38,0.8)]"></div>}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderPostCare = () => (
+                <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
+                    <header className="bg-slate-900 text-white p-5 flex items-center shadow-md z-10">
+                        <button onClick={() => setCurrentView('home')} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
+                            <i className="fas fa-times text-xl"></i>
+                        </button>
+                        <h1 className="text-lg font-bold flex-1 text-center pr-8 tracking-wide">Cuidados pós-RCP</h1>
+                    </header>
+                    
+                    <div className="flex-1 overflow-y-auto p-5 animate-fade-in hide-scrollbar">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 text-center">
+                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-clipboard-check text-2xl"></i>
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-800">{causaSuspeita || 'Causa Reversível Não Definida'}</h2>
+                            <p className="text-sm text-slate-500 mt-2 font-medium">Siga as instruções de acordo com a diretriz da AHA para estabilização inicial.</p>
+                        </div>
+                        
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Checklist de Cuidados</h3>
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100">
+                            {[
+                                'Monitorize adequadamente os parâmetros vitais (monitorização cardíaca, PA, oximetria, temperatura e glicemia)',
+                                'Obter ECG de 12 derivações',
+                                'Manejo da via aérea (capnografia, SpO2 92-98%, PaCO2 35-45mmHg)',
+                                'Controle hemodinâmico (PAS >90 mmHg ou PAM >65 mmHg)',
+                                'Se comatoso: iniciar Controle Direcionado de Temperatura (32° a 36°C)',
+                                'Avaliar transferência imediata para UTI ou Hemodinâmica'
+                            ].map((item, idx) => (
+                                <div key={idx} className="flex p-4 items-start group hover:bg-slate-50 transition-colors">
+                                    <div className="mt-0.5 relative shrink-0">
+                                        <input type="checkbox" className="peer sr-only" id={`check-${idx}`} />
+                                        <label htmlFor={`check-${idx}`} className="block w-6 h-6 border-2 border-slate-300 rounded-full cursor-pointer peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
+                                            <i className="fas fa-check text-white text-xs opacity-0 peer-checked:opacity-100"></i>
+                                        </label>
+                                    </div>
+                                    <label htmlFor={`check-${idx}`} className="ml-3 text-slate-700 text-sm font-medium leading-relaxed cursor-pointer select-none">{item}</label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                        <button 
+                            onClick={handleSaveComplete} 
+                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2"
+                        >
+                            <i className="fas fa-save"></i> Salvar Relatório
+                        </button>
+                    </div>
+                </div>
+            );
+
+            return (
+                <>
+                    {currentView === 'home' && renderHome()}
+                    {currentView === 'procedure' && renderProcedure()}
+                    {currentView === 'postCare' && renderPostCare()}
+                    
+                    <Modal {...modalConfig} />
+                </>
+            );
+        };
+
+        // Renderizar a aplicação
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

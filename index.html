@@ -164,7 +164,7 @@
             const [modalConfig, setModalConfig] = useState({ show: false });
             const [tickVisual, setTickVisual] = useState(false);
             const [defibrillationCount, setDefibrillationCount] = useState(0);
-            const [lastAmiodaroneTime, setLastAmiodaroneTime] = useState(null);
+            const [amiodaroneDoseCount, setAmiodaroneDoseCount] = useState(0);
             const [suggestedAction, setSuggestedAction] = useState(null);
 
             const audioCtxRef = useRef(null);
@@ -258,7 +258,7 @@
                 setElapsedSecs(0);
                 setCycleCount(1);
                 setDefibrillationCount(0);
-                setLastAmiodaroneTime(null);
+                setAmiodaroneDoseCount(0);
                 setSuggestedAction(null);
                 
                 logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`);
@@ -288,7 +288,9 @@
                     const newCount = defibrillationCount + 1;
                     setDefibrillationCount(newCount);
                     const now = Date.now();
-                    if (newCount >= 3 && !lastAmiodaroneTime) {
+                    if (newCount === 3 && amiodaroneDoseCount < 1) {
+                        setSuggestedAction('amiodarona');
+                    } else if (newCount === 5 && amiodaroneDoseCount < 2) {
                         setSuggestedAction('amiodarona');
                     } else if (newCount >= 2 && (!lastAdrenalineTime || now - lastAdrenalineTime > 240000)) {
                         setSuggestedAction('adrenalina');
@@ -299,7 +301,7 @@
                     setLastAdrenalineTime(Date.now());
                     setSuggestedAction(null);
                 } else if (item === 'Amiodarona') {
-                    setLastAmiodaroneTime(Date.now());
+                    setAmiodaroneDoseCount(prev => Math.min(prev + 1, 2));
                     setSuggestedAction(null);
                 }
             };
@@ -475,6 +477,7 @@
                                                 {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map((item, i) => {
                                                     const isAmio = item === 'Amiodarona';
                                                     const isAdr = item === 'Adrenalina';
+                                                    const amioLabel = amiodaroneDoseCount === 0 ? 'Amiodarona 300mg' : amiodaroneDoseCount === 1 ? 'Amiodarona 150mg' : 'Amiodarona';
                                                     let blinkClass = '';
                                                     if (isAmio && suggestedAction === 'amiodarona') blinkClass = 'animate-blink bg-purple-500 border-purple-400 text-white font-bold ring-2 ring-purple-300';
                                                     else if (isAdr && suggestedAction === 'adrenalina') blinkClass = 'animate-blink bg-blue-500 border-blue-400 text-white font-bold ring-2 ring-blue-300';
@@ -487,7 +490,7 @@
                                                         onClick={() => handleAction('therapy', item)}
                                                         className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${blinkClass}`}
                                                     >
-                                                        {item}
+                                                        {isAmio ? amioLabel : item}
                                                     </button>
                                                 );})}
                                             </div>

@@ -177,6 +177,7 @@
             const metronomeIntervalRef = useRef(null);
             const timerRef = useRef(null);
             const prevCycleRef = useRef(0);
+            const wakeLockRef = useRef(null);
 
             useEffect(() => {
                 if (isRunning) {
@@ -319,6 +320,8 @@
                 
                 logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`, 0);
                 
+                requestWakeLock();
+                
                 if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
                     audioCtxRef.current.resume();
                 }
@@ -386,6 +389,7 @@
                     danger: true,
                     onConfirm: () => {
                         setIsRunning(false);
+                        releaseWakeLock();
                         logEvent('system', 'Procedimento finalizado', `Duração total: ${formatTime(elapsedSecs)}`);
                         setCurrentView('postCare');
                         setModalConfig({ show: false });
@@ -476,6 +480,33 @@
                 setIsMuted(!isMuted);
             };
 
+            const requestWakeLock = async () => {
+                try {
+                    if ('wakeLock' in navigator) {
+                        wakeLockRef.current = await navigator.wakeLock.request('screen');
+                    }
+                } catch (e) {
+                    console.log('Wake Lock não disponível', e);
+                }
+            };
+
+            const releaseWakeLock = () => {
+                if (wakeLockRef.current) {
+                    wakeLockRef.current.release();
+                    wakeLockRef.current = null;
+                }
+            };
+
+            useEffect(() => {
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible' && isRunning) {
+                        requestWakeLock();
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+            }, [isRunning]);
+
             const handleSaveComplete = () => {
                 const report = {
                     id: Date.now(),
@@ -493,6 +524,7 @@
                     localStorage.setItem(STORAGE_REPORTS, JSON.stringify(updated));
                 } catch (e) { /* ignore */ }
                 localStorage.removeItem(STORAGE_CURRENT);
+                releaseWakeLock();
                 setCurrentView('home');
                 setEvents([]);
                 setDiagnosis(null);
@@ -837,8 +869,8 @@
                                     });
                                     const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
                                     return (
-                                    <div className="overflow-y-auto flex-1 min-h-0 hide-scrollbar">
-                                        <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
+                                    <div className="flex-1 min-h-0 hide-scrollbar">
+                                        <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
                                             <button onClick={handleCopyReport} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                                                 <i className="fas fa-copy"></i> Copiar
                                             </button>
@@ -847,7 +879,7 @@
                                             </button>
                                         </div>
                                         <table className="w-full text-xs">
-                                            <thead className="bg-slate-100 sticky z-10" style={{top: '34px'}}>
+                                            <thead className="bg-slate-100">
                                                 <tr className="border-b border-slate-200">
                                                     <th className="p-2 text-left font-bold text-slate-500 w-10">#</th>
                                                     <th className="p-2 text-left font-bold text-slate-500">Ritmo</th>

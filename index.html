@@ -168,6 +168,7 @@
             const [tickVisual, setTickVisual] = useState(false);
             const [defibrillationCount, setDefibrillationCount] = useState(0);
             const [amiodaroneDoseCount, setAmiodaroneDoseCount] = useState(0);
+            const [adrenalineDoseCount, setAdrenalineDoseCount] = useState(0);
             const [suggestedAction, setSuggestedAction] = useState(null);
             const [reports, setReports] = useState([]);
             const [viewingReport, setViewingReport] = useState(null);
@@ -570,6 +571,7 @@
                             const rhythmCount = {};
                             let totalShocks = 0;
                             let totalAmio = 0;
+                            let totalAdr = 0;
                             let totalDuration = 0;
                             reports.forEach(rep => {
                                 totalDuration += rep.totalTime || 0;
@@ -578,6 +580,9 @@
                                 }
                                 totalShocks += rep.defibrillationCount || 0;
                                 totalAmio += rep.amiodaroneDoseCount || 0;
+                                (rep.events || []).forEach(ev => {
+                                    if (ev.title === 'Executado Adrenalina') totalAdr++;
+                                });
                             });
                             const avgDuration = total > 0 ? formatTime(Math.round(totalDuration / total)) : '—';
                             const mostCommonRhythm = Object.entries(rhythmCount).sort((a, b) => b[1] - a[1])[0];
@@ -601,6 +606,10 @@
                                         <div className="bg-purple-50 rounded-xl p-3 text-center">
                                             <span className="text-2xl font-black text-purple-600">{totalAmio}</span>
                                             <p className="text-[10px] text-purple-500 font-semibold mt-0.5">Doses Amiodarona</p>
+                                        </div>
+                                        <div className="bg-rose-50 rounded-xl p-3 text-center">
+                                            <span className="text-2xl font-black text-rose-600">{totalAdr}</span>
+                                            <p className="text-[10px] text-rose-500 font-semibold mt-0.5">Doses Adrenalina</p>
                                         </div>
                                     </div>
                                 </div>

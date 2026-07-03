@@ -168,7 +168,6 @@
             const [tickVisual, setTickVisual] = useState(false);
             const [defibrillationCount, setDefibrillationCount] = useState(0);
             const [amiodaroneDoseCount, setAmiodaroneDoseCount] = useState(0);
-            const [adrenalineDoseCount, setAdrenalineDoseCount] = useState(0);
             const [suggestedAction, setSuggestedAction] = useState(null);
             const [reports, setReports] = useState([]);
             const [viewingReport, setViewingReport] = useState(null);
@@ -535,20 +534,41 @@
                                     const duration = rep.totalTime ? formatTime(rep.totalTime) : '—';
                                     const rhythm = rep.diagnosis || 'Não diagnosticado';
                                     return (
-                                    <button key={rep.id} onClick={() => setViewingReport(rep)} className="w-full flex items-center p-4 bg-white hover:bg-slate-50 transition-colors text-left">
-                                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
-                                            <i className="fas fa-file-medical-alt text-sm"></i>
-                                        </div>
-                                        <div className="ml-3 flex-1">
-                                            <h3 className="text-sm font-bold text-slate-800">RCP {dateStr} às {timeStr}</h3>
-                                            <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                                                {duration} &middot; {rhythm}
-                                            </p>
-                                        </div>
-                                        <div className="text-slate-300">
-                                            <i className="fas fa-chevron-right text-xs"></i>
-                                        </div>
-                                    </button>
+                                    <div key={rep.id} className="flex items-stretch">
+                                        <button onClick={() => setViewingReport(rep)} className="flex-1 flex items-center p-4 bg-white hover:bg-slate-50 transition-colors text-left">
+                                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+                                                <i className="fas fa-file-medical-alt text-sm"></i>
+                                            </div>
+                                            <div className="ml-3 flex-1">
+                                                <h3 className="text-sm font-bold text-slate-800">RCP {dateStr} às {timeStr}</h3>
+                                                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                                                    {duration} &middot; {rhythm}
+                                                </p>
+                                            </div>
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setModalConfig({
+                                                    show: true,
+                                                    title: 'Apagar Relatório',
+                                                    message: `Deseja apagar o relatório de RCP de ${dateStr} às ${timeStr}?`,
+                                                    confirmText: 'Apagar',
+                                                    cancelText: 'Cancelar',
+                                                    danger: true,
+                                                    onConfirm: () => {
+                                                        const updated = reports.filter(r => r.id !== rep.id);
+                                                        setReports(updated);
+                                                        localStorage.setItem(STORAGE_REPORTS, JSON.stringify(updated));
+                                                        setModalConfig({ show: false });
+                                                    },
+                                                    onCancel: () => setModalConfig({ show: false })
+                                                });
+                                            }}
+                                            className="px-4 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                        >
+                                            <i className="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
                                     );
                                 })}
                             </div>

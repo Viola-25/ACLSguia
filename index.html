@@ -765,42 +765,44 @@
                         )}
 
                         {activeTab === 'causa' && (
-                            <div className="flex-1 overflow-y-auto p-3 animate-fade-in hide-scrollbar pb-20">
-                                <div className="bg-blue-50 text-blue-800 p-3 rounded-xl text-xs font-medium shadow-sm border border-blue-100">
-                                    Selecione a possível causa reversível para visualizar orientações no pós-RCP.
-                                </div>
-                                <div className="mt-3">
-                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
-                                    <div className="space-y-1.5">
-                                        {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
-                                            <button 
-                                                key={causa} 
-                                                onClick={() => setCausaSuspeita(causa)}
-                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                                            >
-                                                <div className="flex justify-between items-center">
-                                                    <span>{causa}</span>
-                                                    {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
-                                                </div>
-                                            </button>
-                                        ))}
+                            <div className="flex-1 flex flex-col animate-fade-in min-h-0">
+                                <div className="overflow-y-auto flex-1 min-h-0 p-3 hide-scrollbar">
+                                    <div className="bg-blue-50 text-blue-800 p-3 rounded-xl text-xs font-medium shadow-sm border border-blue-100">
+                                        Selecione a possível causa reversível para visualizar orientações no pós-RCP.
                                     </div>
-                                </div>
-                                <div className="mt-3">
-                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
-                                    <div className="space-y-1.5">
-                                        {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
-                                            <button 
-                                                key={causa} 
-                                                onClick={() => setCausaSuspeita(causa)}
-                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                                            >
-                                                <div className="flex justify-between items-center">
-                                                    <span>{causa}</span>
-                                                    {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
-                                                </div>
-                                            </button>
-                                        ))}
+                                    <div className="mt-3">
+                                        <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
+                                        <div className="space-y-1.5">
+                                            {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
+                                                <button 
+                                                    key={causa} 
+                                                    onClick={() => setCausaSuspeita(causa)}
+                                                    className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <span>{causa}</span>
+                                                        {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="mt-3">
+                                        <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
+                                        <div className="space-y-1.5">
+                                            {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
+                                                <button 
+                                                    key={causa} 
+                                                    onClick={() => setCausaSuspeita(causa)}
+                                                    className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <span>{causa}</span>
+                                                        {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

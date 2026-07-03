@@ -232,7 +232,7 @@
             const cycleSeconds = elapsedSecs % CYCLE_DURATION;
             const adrenalineSeconds = lastAdrenalineTime 
                 ? Math.floor((Date.now() - lastAdrenalineTime) / 1000) 
-                : elapsedSecs;
+                : 0;
 
             const logEvent = (type, title, description = '') => {
                 const nowStr = getCurrentTimeStr();

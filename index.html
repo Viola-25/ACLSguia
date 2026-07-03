@@ -46,6 +46,14 @@
             font-variant-numeric: tabular-nums;
         }
 
+        @keyframes blink-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.96); }
+        }
+        .animate-blink {
+            animation: blink-pulse 0.8s ease-in-out infinite;
+        }
+
         .h-dynamic {
             height: 100vh;
             height: 100dvh;
@@ -155,10 +163,14 @@
             const [bpm, setBpm] = useState(BPM_DEFAULT);
             const [modalConfig, setModalConfig] = useState({ show: false });
             const [tickVisual, setTickVisual] = useState(false);
+            const [defibrillationCount, setDefibrillationCount] = useState(0);
+            const [lastAmiodaroneTime, setLastAmiodaroneTime] = useState(null);
+            const [suggestedAction, setSuggestedAction] = useState(null);
 
             const audioCtxRef = useRef(null);
             const metronomeIntervalRef = useRef(null);
             const timerRef = useRef(null);
+            const prevCycleRef = useRef(0);
 
             useEffect(() => {
                 if (isRunning) {
@@ -208,6 +220,15 @@
                 };
             }, [isRunning, startTime, isMuted, bpm]);
 
+            useEffect(() => {
+                if (isRunning && cycleCount > 1 && cycleCount !== prevCycleRef.current) {
+                    prevCycleRef.current = cycleCount;
+                    if (!suggestedAction || suggestedAction === 'reavaliar_ritmo') {
+                        setSuggestedAction('reavaliar_ritmo');
+                    }
+                }
+            }, [cycleCount, isRunning, suggestedAction]);
+
             const cycleSeconds = elapsedSecs % CYCLE_DURATION;
             const adrenalineSeconds = lastAdrenalineTime 
                 ? Math.floor((Date.now() - lastAdrenalineTime) / 1000) 
@@ -229,7 +250,6 @@
             const handleStartProcedure = () => {
                 const now = Date.now();
                 setStartTime(now);
-                setLastAdrenalineTime(now);
                 setIsRunning(true);
                 setCurrentView('procedure');
                 setEvents([]);
@@ -237,6 +257,9 @@
                 setCausaSuspeita(null);
                 setElapsedSecs(0);
                 setCycleCount(1);
+                setDefibrillationCount(0);
+                setLastAmiodaroneTime(null);
+                setSuggestedAction(null);
                 
                 logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`);
                 
@@ -251,8 +274,33 @@
                 
                 if (category === 'diagnosis') {
                     setDiagnosis(item);
+                    if (item === 'FV / TVSP') {
+                        setSuggestedAction('desfribilacao');
+                    } else {
+                        const now = Date.now();
+                        if (!lastAdrenalineTime || now - lastAdrenalineTime > 240000) {
+                            setSuggestedAction('adrenalina');
+                        } else {
+                            setSuggestedAction(null);
+                        }
+                    }
+                } else if (item === 'Desfibrilação') {
+                    const newCount = defibrillationCount + 1;
+                    setDefibrillationCount(newCount);
+                    const now = Date.now();
+                    if (newCount >= 3 && !lastAmiodaroneTime) {
+                        setSuggestedAction('amiodarona');
+                    } else if (newCount >= 2 && (!lastAdrenalineTime || now - lastAdrenalineTime > 240000)) {
+                        setSuggestedAction('adrenalina');
+                    } else {
+                        setSuggestedAction(null);
+                    }
                 } else if (item === 'Adrenalina') {
                     setLastAdrenalineTime(Date.now());
+                    setSuggestedAction(null);
+                } else if (item === 'Amiodarona') {
+                    setLastAmiodaroneTime(Date.now());
+                    setSuggestedAction(null);
                 }
             };
 
@@ -399,13 +447,19 @@
                                 )}
                                 
                                 <div>
-                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ritmo Cardíaco</h3>
+                                    <h3 className="text-[9px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                        {suggestedAction === 'reavaliar_ritmo' ? (
+                                            <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
+                                        ) : (
+                                            <span className="text-slate-400">Ritmo Cardíaco</span>
+                                        )}
+                                    </h3>
                                     <div className="grid grid-cols-3 gap-1.5">
                                         {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => (
                                             <button 
                                                 key={diag}
                                                 onClick={() => handleAction('diagnosis', diag)}
-                                                className={`py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
+                                                className={`py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : suggestedAction === 'reavaliar_ritmo' ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
                                             >
                                                 {diag}
                                             </button>
@@ -418,15 +472,24 @@
                                         <div>
                                             <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Terapias</h3>
                                             <div className="grid grid-cols-3 gap-1.5">
-                                                {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map(item => (
+                                                {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map((item, i) => {
+                                                    const isAmio = item === 'Amiodarona';
+                                                    const isAdr = item === 'Adrenalina';
+                                                    let blinkClass = '';
+                                                    if (isAmio && suggestedAction === 'amiodarona') blinkClass = 'animate-blink bg-purple-500 border-purple-400 text-white font-bold ring-2 ring-purple-300';
+                                                    else if (isAdr && suggestedAction === 'adrenalina') blinkClass = 'animate-blink bg-blue-500 border-blue-400 text-white font-bold ring-2 ring-blue-300';
+                                                    else if (isAdr) blinkClass = 'bg-blue-50 border-blue-200 text-blue-700 font-bold hover:bg-blue-100';
+                                                    else if (isAmio) blinkClass = 'bg-purple-50 border-purple-200 text-purple-700 font-bold hover:bg-purple-100';
+                                                    else blinkClass = 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300';
+                                                    return (
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('therapy', item)}
-                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Adrenalina' ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold hover:bg-blue-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${blinkClass}`}
                                                     >
                                                         {item}
                                                     </button>
-                                                ))}
+                                                );})}
                                             </div>
                                         </div>
 
@@ -437,7 +500,7 @@
                                                     <button 
                                                         key={item}
                                                         onClick={() => handleAction('intervention', item)}
-                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Desfibrilação' ? 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                                                        className={`py-2 rounded-lg font-semibold text-[10px] border active:scale-95 transition-all ${item === 'Desfibrilação' ? suggestedAction === 'desfribilacao' ? 'animate-blink bg-red-500 border-red-400 text-white font-bold ring-2 ring-red-300' : 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
                                                     >
                                                         {item}
                                                     </button>

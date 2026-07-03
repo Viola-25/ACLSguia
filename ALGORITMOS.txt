@@ -1,0 +1,312 @@
+================================================================================
+ALGORITMO 1: RCP EM ADULTO (PARADA CARDÍACA)
+================================================================================
+
+Passo 1: Inicie a RCP.
+- Forneça oxigênio.
+- Coloque o monitor/desfibrilador.
+Condicional: Ritmo chocável?
+- Sim: (Siga para o Passo 2)
+- Não: (Siga para o Passo 9)
+
+[RAMO CHOCÁVEL (SIM)]
+Passo 2: FV/TVSP.
+Passo 3: Choque.
+Passo 4: RCP 2 min.
+- Acesso IV/IO.
+Condicional: Ritmo chocável?
+- Sim: (Siga para o Passo 5)
+- Não: (Siga para o Passo 11)
+Passo 5: Choque.
+Passo 6: RCP 2 min.
+- Epinefrina a cada 3 a 5 min.
+- Considere via aérea avançada, capnografia.
+Condicional: Ritmo chocável?
+- Sim: (Siga para o Passo 7)
+- Não: (Siga para o Passo 11)
+Passo 7: Choque.
+Passo 8: RCP 2 min.
+- Amiodarona ou lidocaína.
+- Trate causas reversíveis.
+
+[RAMO NÃO CHOCÁVEL (ASSISTOLE/AESP)]
+Passo 9: Assistole/AESP.
+- Ação: Epinefrina imediatamente.
+Passo 10: RCP 2 min.
+- Acesso IV/IO.
+- Epinefrina a cada 3 a 5 min.
+- Considere via aérea avançada, capnografia.
+Condicional: Ritmo chocável?
+- Sim: Choque (Passo 5) e siga para o Passo 6.
+- Não: (Siga para o Passo 11)
+
+[FLUXO CONJUNTO]
+Passo 11: RCP 2 min.
+- Trate causas reversíveis.
+Condicional: Ritmo chocável?
+- Sim: Vá para 5 ou 7.
+- Não: (Siga para o Passo 12)
+Passo 12: Se não houver sinais de retorno da circulação espontânea (RCE), vá para 10 ou 11.
+- Se RCE, vá para cuidados pós-PCR.
+- Considere se é adequado continuar com a ressuscitação.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - QUALIDADE DA RCP:
+-------------------------------------------------------------------------------
+- Comprima com força (pelo menos 5 cm) e rapidez (100 a 120/min) e aguarde o retorno total do tórax.
+- Minimize as interrupções nas compressões.
+- Evitar ventilação excessiva.
+- Alternar as pessoas que aplicam as compressões a cada 2 minutos ou antes, se houver cansaço.
+- Sem via aérea avançada, relação compressão-ventilação de 30:2.
+- Capnografia quantitativa com forma de onda - Se PetCO2 estiver baixo e caindo, reavalie a qualidade da RCP.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - CARGA DO CHOQUE PARA DESFIBRILAÇÃO:
+-------------------------------------------------------------------------------
+- Bifásica: Recomendação do fabricante (por exemplo, dose inicial de 120 a 200 J, se desconhecida, usar o máximo disponível). A segunda dose e as subsequentes devem ser consideradas doses mais altas.
+- Monofásica: 360 J.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - TRATAMENTO MEDICAMENTOSO:
+-------------------------------------------------------------------------------
+- Dose IV/IO de epinefrina: 1 mg a cada 3 a 5 minutos.
+- Dose IV/IO de amiodarona: Primeira dose: bolus de 300 mg. Segunda dose: 150 mg.
+- Dose IV/IO de lidocaína: Primeira dose: 1 a 1,5 mg/kg. Segunda dose: 0,5 a 0,75 mg/kg.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - VIA AÉREA AVANÇADA:
+-------------------------------------------------------------------------------
+- Intubação endotraqueal ou via aérea supraglótica avançada.
+- Capnografia com forma de onda ou capnometria para confirmar e monitorar o posicionamento do tubo ET.
+- Quando houver uma via aérea avançada, administre 1 ventilação a cada 6 segundos (10 ventilações/min) com compressões torácicas contínuas.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - RETORNO DA CIRCULAÇÃO ESPONTÂNEA (RCE):
+-------------------------------------------------------------------------------
+- Pulso e pressão arterial.
+- Aumento abrupto prolongado na PETCO2 (tipicamente, ≥40 mmHg).
+- Ondas da pressão arterial espontânea com monitoramento intra-arterial.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - CAUSAS REVERSÍVEIS (Hs e Ts):
+-------------------------------------------------------------------------------
+- Hipovolemia
+- Hipóxia
+- Hidrogênio (acidemia)
+- Hipo/hipercalemia
+- Hipotermia
+- pneumoTórax hipertensivo
+- Tamponamento cardíaco
+- Toxinas
+- Trombose, pulmonar
+- Trombose, coronária
+
+
+================================================================================
+ALGORITMO 2: BRADIARRITMIA
+================================================================================
+
+Passo 1: Avalie a adequabilidade ao quadro clínico. Frequência cardíaca tipicamente <50/min, se bradiarritmia.
+Passo 2: Identifique e trate a causa subjacente.
+- Mantenha as vias aéreas patentes e auxilie a respiração, conforme necessário.
+- Oxigênio (se hipoxêmico).
+- Monitor cardíaco para identificar ritmo; monitore pressão arterial e oximetria.
+- Acesso IV.
+- ECG de 12 derivações, se disponível; não retarde o tratamento.
+- Considere possíveis causas hipóxicas e toxicológicas.
+
+Condicional (Passo 3): Bradiarritmia persistente causando:
+- Hipotensão?
+- Alteração aguda do estado mental?
+- Sinais de choque?
+- Desconforto torácico isquêmico?
+- Insuficiência cardíaca aguda?
+- Não: (Siga para o Passo 4)
+- Sim: (Siga para o Passo 5)
+
+Passo 4: Monitore e observe. (Retorna para o Passo 2).
+Passo 5: Atropina.
+- Se atropina for ineficaz:
+- Estimulação transcutânea e/ou
+- Infusão de dopamina ou
+- Infusão de epinefrina.
+Passo 6: Considere:
+- Consultar um especialista.
+- Estimulação transvenosa.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - DOSES/DETALHES:
+-------------------------------------------------------------------------------
+- Dose IV de atropina: Primeira dose: bolus de 1 mg. Repita a cada 3 ou 5 minutos. Máximo: 3 mg.
+- Infusão IV de dopamina: A velocidade de infusão usual é de 5 a 20 mcg/kg por minuto. Titular conforme resposta do paciente; diminua gradualmente.
+- Infusão IV de epinefrina: Infusão de 2 a 10 mcg por minuto. Titular conforme resposta do paciente.
+- Causas: Isquemia do miocárdio/infarto; Medicamentos/causas toxicológicas (ex: bloqueadores dos canais de cálcio, betabloqueadores, digoxina); Hipóxia; Distúrbios eletrolíticos (ex: hipercalemia).
+
+
+================================================================================
+ALGORITMO 3: PCR EM GESTANTE
+================================================================================
+
+Passo 1: Continue com SBV/SAVC.
+- RCP de alta qualidade.
+- Desfibrilação, se indicada.
+- Outras intervenções de SAVC (por exemplo, epinefrina).
+Passo 2: Acione a equipe de PCR em gestante.
+Passo 3: Considere a etiologia da PCR.
+
+[RAMO 1 - INTERVENÇÕES CLÍNICAS]
+Passo 4: Execute intervenções para gestante.
+- Execute o manejo da via aérea.
+- Administre O2 a 100%, evite ventilação em excesso.
+- Coloque o IV acima do diafragma.
+- Se a paciente estiver recebendo magnésio IV, pare e administre cloreto de cálcio ou gluconato.
+Passo 5: Continue com SBV/SAVC.
+- RCP de alta qualidade.
+- Desfibrilação, se indicada.
+- Outras intervenções de SAVC (por exemplo, epinefrina).
+
+[RAMO 2 - INTERVENÇÕES OBSTÉTRICAS]
+Passo 6: Execute intervenções obstétricas.
+- Realize o deslocamento uterino lateral contínuo.
+- Desconecte os monitores fetais.
+- Prepare-se para cesariana de emergência.
+Passo 7: Realize cesariana de emergência.
+- Se não houver RCE, complete a cesariana perimortem idealmente dentro de 5 minutos após o momento da parada.
+Passo 8: Equipe neonatal para receber o neonato.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - PCR EM GESTANTE:
+-------------------------------------------------------------------------------
+- O planejamento da equipe deve ser feito em colaboração com os serviços de obstetrícia, neonatologia, emergência, anestesiologia, terapia intensiva e PCR.
+- As prioridades para gestantes em PCR devem incluir a administração de RCP de alta qualidade e o alívio da compressão aortocaval com deslocamento uterino lateral.
+- O objetivo da cesariana de emergência é melhorar os resultados para a mãe e para o feto.
+- Idealmente, realize a cesariana de emergência em 5 minutos, dependendo dos recursos e dos conjuntos de habilidades do profissional.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - VIA AÉREA AVANÇADA:
+-------------------------------------------------------------------------------
+- Na gravidez, uma via aérea difícil é comum. Use o profissional mais experiente.
+- Realize intubação endotraqueal ou via aérea supraglótica avançada.
+- Realize capnografia com forma de onda ou capnometria para confirmar e monitorar o posicionamento do tubo ET.
+- Quando houver via aérea avançada, administre 1 ventilação a cada 6 segundos (10 ventilações/min) com compressões torácicas contínuas.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - POSSÍVEL ETIOLOGIA DE PCR EM GESTANTE:
+-------------------------------------------------------------------------------
+A - Complicações anestésicas.
+B - Hemorragia/Bleeding.
+C - Cardiovascular.
+D - Medicamentos.
+E - Embolia.
+F - Febre.
+G - Causas não obstétricas gerais de PCR (Hs e Ts).
+H - Hipertensão.
+
+
+================================================================================
+ALGORITMO 4: PÓS-PCR (CUIDADOS PÓS-RESSUSCITAÇÃO)
+================================================================================
+
+[FASE DE ESTABILIZAÇÃO INICIAL]
+Passo 1: RCE obtido.
+Passo 2: Manejo da via aérea.
+- Posicionamento inicial do tubo endotraqueal.
+- Controle dos parâmetros respiratórios:
+  * Inicie com 10 ventilações por minuto.
+  * SpO2 entre 92%-98%.
+  * PaCO2 35-45 mmHg.
+- Controle dos parâmetros hemodinâmicos:
+  * Pressão arterial sistólica >90 mmHg.
+  * Pressão arterial média >65 mmHg.
+Passo 3: Obtenha ECG de 12 derivações.
+Passo 4: Considere intervenção cardíaca de urgência, se:
+- IAMST estiver presente.
+- Houver um choque cardiogênico instável.
+- Suporte circulatório mecânico for necessário.
+Condicional (Passo 5): Atende a comandos?
+- Não: (Siga para o Passo 6)
+- Sim: (Siga para o Passo 7)
+Passo 6: Comatoso.
+- CDT.
+- Realize uma TC do cérebro.
+- Monitoramento de EEG.
+- Outros manejos para atendimento crítico.
+Passo 7: Desperto.
+- Outros manejos para atendimento crítico.
+Passo 8 (Convergente): Avalie e trate rapidamente etiologias reversíveis. Envolva consulta a especialistas para tratamento continuado.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - FASE DE ESTABILIZAÇÃO INICIAL:
+-------------------------------------------------------------------------------
+- A ressuscitação é contínua durante a fase pós-RCE e muitas outras atividades podem ocorrer ao mesmo tempo. No entanto, se a priorização for necessária, siga estas etapas:
+- Manejo da via aérea: Capnografia com forma de onda ou capnometria para confirmar e monitorar o posicionamento do tubo endotraqueal.
+- Controle dos parâmetros respiratórios: Titule FiO2 para SpO2 de 92%-98%; inicie em 10 ventilações/min; titule para PaCO2 de 35-45 mmHg.
+- Controle dos parâmetros hemodinâmicos: Administre cristaloides e/ou vasopressores ou inotrópicos visando a pressão arterial sistólica >90 mmHg ou pressão arterial média >65 mmHg.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - MANEJO CONTÍNUO E ATIVIDADES DE URGÊNCIA:
+-------------------------------------------------------------------------------
+- Essas avaliações devem ser realizadas ao mesmo tempo, para que as decisões sobre o controle direcionado da temperatura (CDT) recebam alta prioridade como intervenções cardíacas.
+- Intervenção cardíaca de urgência: avaliação inicial de eletrocardiograma (ECG) de 12 derivações; considere a hemodinâmica para tomar decisões em intervenções cardíacas.
+- CDT: se o paciente não estiver atendendo comandos, inicie o CDT assim que possível; comece entre 32°C e 36°C durante 24 horas usando um dispositivo de resfriamento com ciclo de feedback.
+- Outros manejos para atendimento crítico:
+  * Monitoramento contínuo da temperatura central (esofágica, retal, bexiga).
+  * Manutenção de normoxia, normocapnia e euglicemia.
+  * Monitoramento contínuo ou intermitente por eletroencefalograma (EEG).
+  * Ventilação de proteção dos pulmões.
+
+
+================================================================================
+ALGORITMO 5: TAQUIARRITMIA
+================================================================================
+
+Passo 1: Avalie a adequabilidade ao quadro clínico. Frequência cardíaca normalmente ≥150/min, se taquiarritmia.
+Passo 2: Identifique e trate a causa subjacente.
+- Mantenha as vias aéreas patentes e auxilie a respiração, conforme necessário.
+- Oxigênio (se hipoxêmico).
+- Monitor cardíaco para identificar ritmo; monitore pressão arterial e oximetria.
+- Acesso IV.
+- ECG de 12 derivações, se disponível.
+Condicional (Passo 3): Taquiarritmia persistente causando:
+- Hipotensão?
+- Alteração aguda do estado mental?
+- Sinais de choque?
+- Desconforto torácico isquêmico?
+- Insuficiência cardíaca aguda?
+- Sim: (Siga para o Passo 4)
+- Não: (Siga para o Passo 6)
+
+[RAMO INSTÁVEL (NÃO)]
+Passo 6: QRS largo? (≥0,12 segundo).
+- Sim: (Siga para o Passo 7)
+- Não: (Siga para o Passo 8)
+Passo 7: Considere:
+- Adenosina somente se regular e monomórfico.
+- Infusão antiarrítmica.
+- Consultar um especialista.
+Passo 8:
+- Manobras vagais (se regular).
+- Adenosina (se regular).
+- β-bloqueadores ou bloqueadores de canais de cálcio.
+- Considere consultar um especialista.
+* Nota: Em caso de refratariedade no QRS largo, siga para Passo 5.
+
+[RAMO INSTÁVEL (SIM)]
+Passo 4: Cardioversão sincronizada.
+- Considere sedação.
+- Se complexo estreito regular, considere adenosina.
+Passo 5: Se refratário, considere:
+- Causa subjacente.
+- Necessidade de aumentar o nível de energia recomendado para a próxima cardioversão.
+- Adição de medicamento antiarrítmico.
+- Consultar um especialista.
+
+-------------------------------------------------------------------------------
+INFORMAÇÕES LATERAIS - DOSES/DETALHES:
+-------------------------------------------------------------------------------
+- Cardioversão sincronizada: Consulte o nível de energia recomendado do dispositivo específico em uso para maximizar o sucesso do primeiro choque.
+- Dose IV de adenosina: Primeira dose: 6 mg IV push rápida; seguido de bolus com solução salina. Segunda dose: 12 mg, se necessário.
+- Infusões de antiarrítmicos para taquicardia com QRS largo estável:
+  * Dose IV de procainamida: 20 a 50 mg/min até supressão da arritmia, ocorrência de hipotensão, duração do QRS aumenta >50%, ou administrar dose máxima de 17 mg/kg. Infusão de manutenção: 1 a 4 mg/min. Evite, se QT prolongado ou ICC.
+  * Dose IV de amiodarona: Primeira dose: 150 mg por 10 minutos. Repita conforme a necessidade, se houver recorrência da TV. Acompanhe com infusão de manutenção de 1 mg/min pelas primeiras 6 horas.
+  * Dose IV de sotalol: 100 mg (1,5 mg/kg) por 5 minutos. Evite, se QT for prolongado.

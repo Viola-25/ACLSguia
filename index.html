@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -698,47 +698,57 @@
                 setVagalManeuverDone(false);
             };
 
-            const generateReportText = (srcEvents, srcDate) => {
+            const generateReportText = (srcEvents, srcDate, srcScenario) => {
                 const dateStr = srcDate
                     ? new Date(srcDate).toLocaleDateString('pt-BR') + ' ' + new Date(srcDate).toTimeString().slice(0,5)
                     : new Date().toLocaleDateString('pt-BR') + ' ' + getCurrentTimeStr().slice(0,5);
                 const items = srcEvents || events;
-                const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
-                const cycleMap = {};
-                items.forEach(ev => {
-                    if (ev.type === 'system') return;
-                    const c = ev.cycle || 1;
-                    if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
-                    const row = cycleMap[c];
-                    if (ev.title.startsWith('Diagnosticado ')) {
-                        row.rhythm = ev.title.slice('Diagnosticado '.length);
-                    } else if (ev.title === 'Executado Desfibrilação') {
-                        row.shock = true;
-                    } else if (ev.title.startsWith('Executado ')) {
-                        const action = ev.title.slice('Executado '.length);
-                        if (drugsList.includes(action)) {
-                            if (!row.drugs.includes(action)) row.drugs.push(action);
-                        } else {
-                            if (!row.interventions.includes(action)) row.interventions.push(action);
-                        }
-                    }
-                });
-                const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                const scenario = srcScenario || selectedScenario;
                 let text = `=== RELATÓRIO ACLS ===\n`;
                 text += `Data: ${dateStr}\n`;
-                text += `Cenário: ${SCENARIO_LABELS[selectedScenario] || '—'}\n`;
+                text += `Cenário: ${SCENARIO_LABELS[scenario] || '—'}\n`;
                 text += `Desfecho: ${procedureOutcome === 'rce' ? 'RCE (Retorno da Circulação Espontânea)' : procedureOutcome === 'obito' ? 'Óbito' : procedureOutcome === 'resolucao' ? 'Resolução (ritmo normalizado)' : procedureOutcome === 'evolucao_parada' ? 'Evoluiu para Parada Cardíaca' : '—'}\n`;
                 const startEv = items.filter(e => e.type === 'system');
                 if (startEv.length) text += `Início: ${startEv[startEv.length-1].description}\n`;
                 text += `\n`;
-                cycles.forEach(row => {
-                    text += `Ciclo ${row.cycle}\n`;
-                    text += `  Ritmo: ${row.rhythm || '—'}\n`;
-                    text += `  Choque: ${row.shock ? 'SIM' : 'NÃO'}\n`;
-                    text += `  Drogas: ${row.drugs.length ? row.drugs.join(', ') : '—'}\n`;
-                    text += `  Intervenções: ${row.interventions.length ? row.interventions.join(', ') : '—'}\n`;
-                    text += `\n`;
-                });
+                if (scenario === 'cardiacArrest') {
+                    const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
+                    const cycleMap = {};
+                    items.forEach(ev => {
+                        if (ev.type === 'system') return;
+                        const c = ev.cycle || 1;
+                        if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
+                        const row = cycleMap[c];
+                        if (ev.title.startsWith('Diagnosticado ')) {
+                            row.rhythm = ev.title.slice('Diagnosticado '.length);
+                        } else if (ev.title === 'Executado Desfibrilação') {
+                            row.shock = true;
+                        } else if (ev.title.startsWith('Executado ')) {
+                            const action = ev.title.slice('Executado '.length);
+                            if (drugsList.includes(action)) {
+                                if (!row.drugs.includes(action)) row.drugs.push(action);
+                            } else {
+                                if (!row.interventions.includes(action)) row.interventions.push(action);
+                            }
+                        }
+                    });
+                    const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                    cycles.forEach(row => {
+                        text += `Ciclo ${row.cycle}\n`;
+                        text += `  Ritmo: ${row.rhythm || '—'}\n`;
+                        text += `  Choque: ${row.shock ? 'SIM' : 'NÃO'}\n`;
+                        text += `  Drogas: ${row.drugs.length ? row.drugs.join(', ') : '—'}\n`;
+                        text += `  Intervenções: ${row.interventions.length ? row.interventions.join(', ') : '—'}\n`;
+                        text += `\n`;
+                    });
+                } else {
+                    const sorted = [...items].filter(e => e.type !== 'system').reverse();
+                    sorted.forEach(ev => {
+                        text += `[${ev.elapsedTime}] ${ev.title}`;
+                        if (ev.description) text += ` — ${ev.description}`;
+                        text += `\n`;
+                    });
+                }
                 return text;
             };
 
@@ -1757,27 +1767,7 @@
                     {events.length === 0 ? (
                         <div className="p-8 text-center text-slate-400 font-medium text-sm">Nenhum evento registrado ainda.</div>
                     ) : (() => {
-                        const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
-                        const cycleMap = {};
-                        events.forEach(ev => {
-                            if (ev.type === 'system') return;
-                            const c = ev.cycle || Math.floor((parseInt(ev.elapsedTime.split(':')[0]) * 60 + parseInt(ev.elapsedTime.split(':')[1])) / CYCLE_DURATION) + 1;
-                            if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
-                            const row = cycleMap[c];
-                            if (ev.title.startsWith('Diagnosticado ')) {
-                                row.rhythm = ev.title.slice('Diagnosticado '.length);
-                            } else if (ev.title === 'Executado Desfibrilação') {
-                                row.shock = true;
-                            } else if (ev.title.startsWith('Executado ')) {
-                                const action = ev.title.slice('Executado '.length);
-                                if (drugsList.includes(action)) {
-                                    if (!row.drugs.includes(action)) row.drugs.push(action);
-                                } else {
-                                    if (!row.interventions.includes(action)) row.interventions.push(action);
-                                }
-                            }
-                        });
-                        const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                        const isArrest = selectedScenario === 'cardiacArrest';
                         return (
                         <div className="flex-1 min-h-0 flex flex-col hide-scrollbar">
                             <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
@@ -1789,28 +1779,67 @@
                                 </button>
                             </div>
                             <div className="overflow-y-auto flex-1">
-                                <table className="w-full text-xs">
-                                    <thead className="bg-slate-100 sticky top-0 z-10">
-                                        <tr className="border-b border-slate-200">
-                                            <th className="p-2 text-left font-bold text-slate-500 w-10">#</th>
-                                            <th className="p-2 text-left font-bold text-slate-500">Ritmo</th>
-                                            <th className="p-2 text-center font-bold text-slate-500 w-12">Choque</th>
-                                            <th className="p-2 text-left font-bold text-slate-500">Drogas</th>
-                                            <th className="p-2 text-left font-bold text-slate-500">Interv.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {cycles.map(row => (
-                                            <tr key={row.cycle} className="bg-white hover:bg-slate-50 transition-colors">
-                                                <td className="p-2 font-bold text-slate-700 align-top">{row.cycle}</td>
-                                                <td className={`p-2 font-semibold align-top ${row.rhythm === 'FV / TVSP' ? 'text-red-600' : row.rhythm ? 'text-blue-600' : 'text-slate-300'}`}>{row.rhythm || '—'}</td>
-                                                <td className="p-2 text-center align-top">{row.shock ? <span className="text-amber-500 text-sm"><i className="fas fa-bolt"></i></span> : <span className="text-slate-200">—</span>}</td>
-                                                <td className="p-2 text-slate-600 align-top">{row.drugs.length ? row.drugs.join(', ') : <span className="text-slate-300">—</span>}</td>
-                                                <td className="p-2 text-slate-600 align-top">{row.interventions.length ? row.interventions.join(', ') : <span className="text-slate-300">—</span>}</td>
+                                {isArrest ? (() => {
+                                    const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
+                                    const cycleMap = {};
+                                    events.forEach(ev => {
+                                        if (ev.type === 'system') return;
+                                        const c = ev.cycle || Math.floor((parseInt(ev.elapsedTime.split(':')[0]) * 60 + parseInt(ev.elapsedTime.split(':')[1])) / CYCLE_DURATION) + 1;
+                                        if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
+                                        const row = cycleMap[c];
+                                        if (ev.title.startsWith('Diagnosticado ')) {
+                                            row.rhythm = ev.title.slice('Diagnosticado '.length);
+                                        } else if (ev.title === 'Executado Desfibrilação') {
+                                            row.shock = true;
+                                        } else if (ev.title.startsWith('Executado ')) {
+                                            const action = ev.title.slice('Executado '.length);
+                                            if (drugsList.includes(action)) {
+                                                if (!row.drugs.includes(action)) row.drugs.push(action);
+                                            } else {
+                                                if (!row.interventions.includes(action)) row.interventions.push(action);
+                                            }
+                                        }
+                                    });
+                                    const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                                    return (
+                                    <table className="w-full text-xs">
+                                        <thead className="bg-slate-100 sticky top-0 z-10">
+                                            <tr className="border-b border-slate-200">
+                                                <th className="p-2 text-left font-bold text-slate-500 w-10">#</th>
+                                                <th className="p-2 text-left font-bold text-slate-500">Ritmo</th>
+                                                <th className="p-2 text-center font-bold text-slate-500 w-12">Choque</th>
+                                                <th className="p-2 text-left font-bold text-slate-500">Drogas</th>
+                                                <th className="p-2 text-left font-bold text-slate-500">Interv.</th>
                                             </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {cycles.map(row => (
+                                                <tr key={row.cycle} className="bg-white hover:bg-slate-50 transition-colors">
+                                                    <td className="p-2 font-bold text-slate-700 align-top">{row.cycle}</td>
+                                                    <td className={`p-2 font-semibold align-top ${row.rhythm === 'FV / TVSP' ? 'text-red-600' : row.rhythm ? 'text-blue-600' : 'text-slate-300'}`}>{row.rhythm || '\u2014'}</td>
+                                                    <td className="p-2 text-center align-top">{row.shock ? <span className="text-amber-500 text-sm"><i className="fas fa-bolt"></i></span> : <span className="text-slate-200">\u2014</span>}</td>
+                                                    <td className="p-2 text-slate-600 align-top">{row.drugs.length ? row.drugs.join(', ') : <span className="text-slate-300">\u2014</span>}</td>
+                                                    <td className="p-2 text-slate-600 align-top">{row.interventions.length ? row.interventions.join(', ') : <span className="text-slate-300">\u2014</span>}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    );
+                                })() : (
+                                    <div className="p-3 space-y-2">
+                                        {[...events].filter(e => e.type !== 'system').reverse().map((ev, i) => (
+                                            <div key={ev.id} className="flex items-start gap-3 bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+                                                <div className="w-14 shrink-0 text-center">
+                                                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{ev.elapsedTime}</span>
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-xs font-bold text-slate-700">{ev.title}</div>
+                                                    {ev.description && <div className="text-[10px] text-slate-400 mt-0.5">{ev.description}</div>}
+                                                </div>
+                                            </div>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </div>
+                                )}
                                 <div className="p-2 bg-amber-50 border-t border-amber-200 text-[10px] text-amber-700 font-medium text-center leading-relaxed">
                                     <i className="fas fa-info-circle mr-1"></i>
                                     Dados salvos automaticamente no cache do navegador.
@@ -1999,22 +2028,6 @@
                 if (!viewingReport) return null;
                 const rep = viewingReport;
                 const d = new Date(rep.date);
-                const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
-                const cycleMap = {};
-                rep.events.forEach(ev => {
-                    if (ev.type === 'system') return;
-                    const c = ev.cycle || 1;
-                    if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
-                    const row = cycleMap[c];
-                    if (ev.title.startsWith('Diagnosticado ')) row.rhythm = ev.title.slice('Diagnosticado '.length);
-                    else if (ev.title === 'Executado Desfibrilação') row.shock = true;
-                    else if (ev.title.startsWith('Executado ')) {
-                        const action = ev.title.slice('Executado '.length);
-                        if (drugsList.includes(action)) { if (!row.drugs.includes(action)) row.drugs.push(action); }
-                        else { if (!row.interventions.includes(action)) row.interventions.push(action); }
-                    }
-                });
-                const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
                 const scenarioLabel = SCENARIO_LABELS[rep.scenario] || '—';
                 const outcomeLabel = rep.outcome === 'rce' ? 'RCE (Retorno da Circulação Espontânea)' : rep.outcome === 'obito' ? 'Óbito' : rep.outcome === 'resolucao' ? 'Resolução (ritmo normalizado)' : rep.outcome === 'evolucao_parada' ? 'Evoluiu para Parada Cardíaca' : '—';
                 const outcomeColor = rep.outcome === 'rce' ? 'text-green-600' : rep.outcome === 'obito' ? 'text-red-600' : rep.outcome === 'resolucao' ? 'text-emerald-600' : rep.outcome === 'evolucao_parada' ? 'text-amber-600' : 'text-slate-400';
@@ -2043,13 +2056,31 @@
                         </div>
                         <div className="flex-1 overflow-y-auto hide-scrollbar">
                             <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
-                                <button onClick={() => { const t = generateReportText(rep.events, rep.date); navigator.clipboard.writeText(t).catch(() => {}); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                <button onClick={() => { const t = generateReportText(rep.events, rep.date, rep.scenario); navigator.clipboard.writeText(t).catch(() => {}); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                                     <i className="fas fa-copy"></i> Copiar
                                 </button>
-                                <button onClick={() => { const t = generateReportText(rep.events, rep.date); const b = new Blob([t], {type:'text/plain;charset=utf-8'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `relatorio_acls_${rep.date.slice(0,10)}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                <button onClick={() => { const t = generateReportText(rep.events, rep.date, rep.scenario); const b = new Blob([t], {type:'text/plain;charset=utf-8'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `relatorio_acls_${rep.date.slice(0,10)}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                                     <i className="fas fa-download"></i> Baixar .txt
                                 </button>
                             </div>
+                            {rep.scenario === 'cardiacArrest' ? (() => {
+                                const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
+                                const cycleMap = {};
+                                rep.events.forEach(ev => {
+                                    if (ev.type === 'system') return;
+                                    const c = ev.cycle || 1;
+                                    if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
+                                    const row = cycleMap[c];
+                                    if (ev.title.startsWith('Diagnosticado ')) row.rhythm = ev.title.slice('Diagnosticado '.length);
+                                    else if (ev.title === 'Executado Desfibrilação') row.shock = true;
+                                    else if (ev.title.startsWith('Executado ')) {
+                                        const action = ev.title.slice('Executado '.length);
+                                        if (drugsList.includes(action)) { if (!row.drugs.includes(action)) row.drugs.push(action); }
+                                        else { if (!row.interventions.includes(action)) row.interventions.push(action); }
+                                    }
+                                });
+                                const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                                return (
                             <table className="w-full text-xs">
                                 <thead className="bg-slate-100 sticky top-0 z-10">
                                     <tr className="border-b border-slate-200">
@@ -2072,6 +2103,22 @@
                                     ))}
                                 </tbody>
                             </table>
+                                );
+                            })() : (
+                            <div className="p-3 space-y-2">
+                                {[...rep.events].filter(e => e.type !== 'system').reverse().map((ev, i) => (
+                                    <div key={ev.id} className="flex items-start gap-3 bg-white rounded-xl p-3 shadow-sm border border-slate-100">
+                                        <div className="w-14 shrink-0 text-center">
+                                            <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{ev.elapsedTime}</span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-xs font-bold text-slate-700">{ev.title}</div>
+                                            {ev.description && <div className="text-[10px] text-slate-400 mt-0.5">{ev.description}</div>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            )}
                             <div className="px-3 py-2 border-t border-slate-100">
                                 <div className="text-[10px] text-slate-400 font-medium leading-relaxed">
                                     <p><span className="font-bold text-slate-500">Eventos:</span> {rep.events.length} registros</p>

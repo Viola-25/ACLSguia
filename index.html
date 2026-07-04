@@ -412,6 +412,10 @@
             const [trainingReports, setTrainingReports] = useState([]);
             const [trainingScore, setTrainingScore] = useState(null);
             const trainingStartRef = useRef(null);
+            const trainingMegacodeRef = useRef(null);
+            const trainingScenarioRef = useRef(null);
+            const [megacodeMsg, setMegacodeMsg] = useState('');
+            const [currentStatus, setCurrentStatus] = useState({ clinical: 'Aguardando início da simulação.' });
             const trainingActionTimes = useRef({});
 
             const audioCtxRef = useRef(null);
@@ -629,7 +633,7 @@
                             }
                         }
                     }
-                } else if (item === 'Desfibrilação') {
+                } else if (item.startsWith('Desfibrilação')) {
                     dismissNotificationByAction('desfribilacao');
                     const newCount = defibrillationCount + 1;
                     setDefibrillationCount(newCount);
@@ -643,27 +647,27 @@
                     } else {
                         setSuggestedAction(null);
                     }
-                } else if (item === 'Adrenalina') {
+                } else if (item.startsWith('Adrenalina')) {
                     dismissNotificationByAction('adrenalina');
                     setLastAdrenalineTime(Date.now());
                     setSuggestedAction(null);
-                } else if (item === 'Amiodarona') {
+                } else if (item.startsWith('Amiodarona')) {
                     setAmiodaroneDoseCount(prev => Math.min(prev + 1, 2));
                     setSuggestedAction(null);
-                } else if (item === 'Lidocaína') {
+                } else if (item.startsWith('Lidocaína')) {
                     setLidocaineGiven(true);
                     setSuggestedAction(null);
-                } else if (item === 'Atropina') {
+                } else if (item.startsWith('Atropina')) {
                     setAtropineGiven(true);
-                } else if (item === 'Marca-passo transcutâneo') {
+                } else if (item.includes('Marca-passo')) {
                     setPacerPlaced(true);
-                } else if (item === 'Adenosina') {
+                } else if (item.startsWith('Adenosina')) {
                     setAdenosineGiven(true);
                 } else if (item === 'Cardioversão sincronizada') {
                     setCardioversionDone(true);
-                } else if (item === 'Epinefrina BIC') {
+                } else if (item === 'Epinefrina BIC' || item === 'Epinefrina') {
                     setEpinefrinaBicGiven(true);
-                } else if (item === 'Dopamina BIC') {
+                } else if (item.startsWith('Dopamina')) {
                     setDopaminaBicGiven(true);
                 } else if (item === 'Manobras vagais') {
                     setVagalManeuverDone(true);
@@ -933,21 +937,59 @@
             };
 
             // ── TRAINING MODE ──
-            const TRAINING_SCENARIOS = [
-                { scenario: 'cardiacArrest', initialRhythm: 'FV / TVSP', label: 'Parada Cardíaca (FV/TVSP)' },
-                { scenario: 'cardiacArrest', initialRhythm: 'AESP', label: 'Parada Cardíaca (AESP)' },
-                { scenario: 'cardiacArrest', initialRhythm: 'Assistolia', label: 'Parada Cardíaca (Assistolia)' },
-                { scenario: 'bradycardia', label: 'Bradiarritmia Sintomática' },
-                { scenario: 'tachycardia', label: 'Taquiarritmia Instável' },
-                { scenario: 'tachycardia', label: 'Taquiarritmia Estável (TSV)' },
+            const MEGACODE_SCENARIOS = [
+                { id: 1, label: 'Bradicardia → TVSP → AESP → pós-PCR', vignette: 'Paciente 72a, sexo M, admitido por síncope. PA 80x50, FC 44 bpm, SatO2 91% em AR. Relata tontura e náusea. Monitore: ritmo pode mudar.', steps: [
+                    { at: 0, rhythm: null, scenario: 'bradycardia', msg: 'Bradicardia sintomática. FC < 50 bpm.' },
+                    { at: 30, rhythm: null, scenario: 'bradycardia', msg: 'Paciente instável. Atropina?' },
+                    { at: 100, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! TV sem pulso!' },
+                    { at: 220, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! AESP.' },
+                    { at: 340, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE? Investigar Hs e Ts.' }
+                ]},
+                { id: 2, label: 'Taquicardia → FV → AESP → pós-PCR', vignette: 'Paciente 58a, sexo F, dor torácica há 3h. FC 192 bpm, PA 84x48, SatO2 89%. ECG mostra QRS largo. Consciência rebaixada.', steps: [
+                    { at: 0, rhythm: null, scenario: 'tachycardia', msg: 'Taquicardia instável. FC > 150 bpm.' },
+                    { at: 15, rhythm: null, scenario: 'tachycardia', msg: 'Cardioversão sincronizada?' },
+                    { at: 90, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! FV!' },
+                    { at: 210, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! AESP.' },
+                    { at: 330, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE? Causa: Trombose coronariana?' }
+                ]},
+                { id: 3, label: 'FV → Assistolia → FV → RCE', vignette: 'Parada presenciada em enfermaria. Paciente 65a, sexo M, pós-IAM 24h. Monitor mostra ritmo chocável. Inicie protocolo.', steps: [
+                    { at: 0, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'FV/TVSP. Desfibrilar!' },
+                    { at: 120, rhythm: 'Assistolia', scenario: 'cardiacArrest', msg: 'Ritmo alterado! Assistolia.' },
+                    { at: 240, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! FV novamente.' },
+                    { at: 360, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE! Cuidados pós-PCR.' }
+                ]},
+                { id: 4, label: 'AESP silenciosa - Hs e Ts', vignette: 'Paciente 48a, sexo F, admitida por sepse urinária. Evoluiu com PCR. Ritmo de AESP no monitor. Sem pulso central.', steps: [
+                    { at: 0, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'AESP. Sem pulso detectável.' },
+                    { at: 120, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'AESP persiste. Hs e Ts?' },
+                    { at: 240, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'AESP persiste. Investigar causas!' },
+                    { at: 360, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE após tratar causa.' }
+                ]},
+                { id: 5, label: 'Bradicardia → FV → AESP → pós-PCR', vignette: 'Paciente 80a, sexo M, DPOC exacerbação. FC 38 bpm, PA 78x44, SatO2 86%. Crepitações bilaterais. TEC 5s.', steps: [
+                    { at: 0, rhythm: null, scenario: 'bradycardia', msg: 'Bradicardia 45 bpm. PAS 70.' },
+                    { at: 45, rhythm: null, scenario: 'bradycardia', msg: 'Atropina? Marca-passo?' },
+                    { at: 110, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'PCR! FV!' },
+                    { at: 230, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'AESP. Causa: Hipovolemia?' },
+                    { at: 350, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE após tratar hipovolemia.' }
+                ]},
+                { id: 6, label: 'Taquicardia estável → AESP → FV → CPPCR', vignette: 'Paciente 45a, sexo F, sem comorbidades, palpitações súbitas. FC 168 bpm, PA 100x60, estável. ECG: TV monomórfica.', steps: [
+                    { at: 0, rhythm: null, scenario: 'tachycardia', msg: 'TV monomórfica estável. QRS largo.' },
+                    { at: 40, rhythm: null, scenario: 'tachycardia', msg: 'Amiodarona?' },
+                    { at: 100, rhythm: 'AESP', scenario: 'cardiacArrest', msg: 'PCR! AESP!' },
+                    { at: 220, rhythm: 'FV / TVSP', scenario: 'cardiacArrest', msg: 'Ritmo alterado! FV!' },
+                    { at: 340, rhythm: null, scenario: 'cardiacArrest', msg: 'RCE! IAM?' }
+                ]}
             ];
 
+            const trainingRhythmTimerRef = useRef(null);
+            const trainingStepIndexRef = useRef(0);
+
             const handleStartTraining = () => {
-                const pick = TRAINING_SCENARIOS[Math.floor(Math.random() * TRAINING_SCENARIOS.length)];
+                const pick = MEGACODE_SCENARIOS[Math.floor(Math.random() * MEGACODE_SCENARIOS.length)];
                 fullResetState();
                 setTrainingMode(true);
                 setTrainingScore(null);
-                setSelectedScenario(pick.scenario);
+                trainingMegacodeRef.current = pick;
+                setSelectedScenario(pick.steps[0].scenario);
                 const now = Date.now();
                 setStartTime(now);
                 setIsRunning(true);
@@ -955,14 +997,16 @@
                 localStorage.removeItem(STORAGE_CURRENT);
                 trainingStartRef.current = now;
                 trainingActionTimes.current = {};
+                trainingStepIndexRef.current = 0;
+                trainingScenarioRef.current = pick.steps[0].scenario;
                 logEvent('system', 'Treino iniciado', `${pick.label} — ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`, 0);
                 requestWakeLock();
                 if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
                     audioCtxRef.current.resume();
                 }
-                if (pick.scenario === 'cardiacArrest' && pick.initialRhythm) {
+                if (pick.steps[0].rhythm) {
                     setTimeout(() => {
-                        handleAction('diagnosis', pick.initialRhythm);
+                        handleAction('diagnosis', pick.steps[0].rhythm);
                     }, 500);
                 }
             };
@@ -970,8 +1014,8 @@
             const calculateTrainingScore = () => {
                 const times = trainingActionTimes.current;
                 const firstDiagnosis = events.find(e => e.type === 'action' && e.title.startsWith('Diagnosticado '));
-                const firstShock = events.find(e => e.title === 'Executado Desfibrilação');
-                const firstAdrenaline = events.find(e => e.title === 'Executado Adrenalina');
+                const firstShock = events.find(e => e.title.startsWith('Executado Desfibrilação'));
+                const firstAdrenaline = events.find(e => e.title.startsWith('Executado Adrenalina'));
                 const firstDiagnosisTime = firstDiagnosis ? parseInt(firstDiagnosis.elapsedTime.split(':')[0]) * 60 + parseInt(firstDiagnosis.elapsedTime.split(':')[1]) : null;
                 const firstShockTime = firstShock ? parseInt(firstShock.elapsedTime.split(':')[0]) * 60 + parseInt(firstShock.elapsedTime.split(':')[1]) : null;
                 const firstAdrenalineTime = firstAdrenaline ? parseInt(firstAdrenaline.elapsedTime.split(':')[0]) * 60 + parseInt(firstAdrenaline.elapsedTime.split(':')[1]) : null;
@@ -980,23 +1024,33 @@
                 if (firstDiagnosisTime !== null && firstDiagnosisTime <= 30) { score += 10; feedback.push('✓ Diagnóstico rápido (≤30s): +10 pts'); }
                 else if (firstDiagnosisTime !== null) { score += 5; feedback.push('✓ Diagnóstico realizado: +5 pts'); }
                 else { feedback.push('✗ Diagnóstico não realizado'); }
-                if (selectedScenario === 'cardiacArrest') {
-                    if (diagnosis === 'FV / TVSP') {
+                const rhythmEvents = events.filter(e => e.title.startsWith('Diagnosticado '));
+                const megacode = trainingMegacodeRef.current;
+                if (megacode && megacode.steps) {
+                    const shockableSteps = megacode.steps.filter(s => s.rhythm === 'FV / TVSP');
+                    if (shockableSteps.length > 0) {
                         if (firstShockTime !== null && firstShockTime <= 180) { score += 15; feedback.push('✓ Choque no tempo correto (≤3min): +15 pts'); }
-                        else if (firstShockTime !== null) { score += 8; feedback.push('✓ Choque realizado (fora do tempo ideal): +8 pts'); }
-                        else { feedback.push('✗ Choque não realizado para FV/TVSP'); }
+                        else if (firstShockTime !== null) { score += 8; feedback.push('✓ Choque realizado: +8 pts'); }
+                        else { feedback.push('✗ FV/TVSP presente — choque não realizado'); }
                     } else {
-                        const hasShock = events.find(e => e.title === 'Executado Desfibrilação');
-                        if (!hasShock) { score += 10; feedback.push('✓ Corretamente não aplicou choque em ritmo não chocável: +10 pts'); }
-                        else { feedback.push('✗ Choque aplicado em ritmo não chocável: -5 pts'); score -= 5; }
+                        const hasShock = events.find(e => e.title.startsWith('Executado Desfibrilação'));
+                        if (!hasShock) { score += 10; feedback.push('✓ Corretamente não aplicou choque: +10 pts'); }
+                        else { feedback.push('✗ Choque desnecessário'); score -= 5; }
                     }
-                    if (firstAdrenalineTime !== null && firstAdrenalineTime <= 300) { score += 10; feedback.push('✓ Adrenalina no tempo correto (≤5min): +10 pts'); }
-                    else if (firstAdrenalineTime !== null) { score += 5; feedback.push('✓ Adrenalina administrada: +5 pts'); }
-                    else if (diagnosis === 'AESP' || diagnosis === 'Assistolia') { feedback.push('✗ Adrenalina não administrada'); }
                 }
-                if (causaSuspeita) { score += 10; feedback.push('✓ Causa reversível identificada: +10 pts'); }
+                if (firstAdrenalineTime !== null && firstAdrenalineTime <= 300) { score += 10; feedback.push('✓ Adrenalina no tempo correto (≤5min): +10 pts'); }
+                else if (firstAdrenalineTime !== null) { score += 5; feedback.push('✓ Adrenalina administrada: +5 pts'); }
+                else { feedback.push('✗ Adrenalina não administrada'); }
+                if (causaSuspeita) { score += 15; feedback.push('✓ Causa reversível identificada: +15 pts'); }
+                else { feedback.push('✗ Nenhuma causa reversível identificada'); }
+                const teamActions = events.filter(e => e.title.includes('Atribuir') || e.title.includes('Comunicação') || e.title.includes('carrinho') || e.title.includes('líder'));
+                if (teamActions.length >= 2) { score += 5; feedback.push('✓ Ações de liderança/equipe: +5 pts'); }
+                const safetyActions = events.filter(e => e.title.includes('Afastar') || e.title.includes('segurança') || e.title.includes('carrinho'));
+                if (safetyActions.length > 0) { score += 5; feedback.push('✓ Verificação de segurança: +5 pts'); }
+                const airwayActions = events.filter(e => e.title.includes('IOT') || e.title.includes('Máscara') || e.title.includes('Cânula') || e.title.includes('Ventilação'));
+                if (airwayActions.length > 0) { score += 5; feedback.push('✓ Via aérea avançada: +5 pts'); }
                 const totalActions = events.filter(e => e.type === 'action').length;
-                if (totalActions >= 3) { score += 5; feedback.push('✓ Múltiplas ações registradas: +5 pts'); }
+                if (totalActions >= 8) { score += 5; feedback.push('✓ Múltiplas ações: +5 pts'); }
                 score = Math.max(0, Math.min(100, score));
                 return { score, feedback };
             };
@@ -1011,6 +1065,7 @@
                     id: Date.now(),
                     date: new Date().toISOString(),
                     scenario: selectedScenario,
+                    megacodeLabel: trainingMegacodeRef.current?.label || SCENARIO_LABELS[selectedScenario] || '—',
                     totalTime: elapsedSecs,
                     score,
                     feedback,
@@ -1039,6 +1094,51 @@
                     addNotification('info', 'Trocar operador de RCP — compressões por 2 min');
                 }
             }, [cycleCount, suggestedAction, trainingMode]);
+
+            // ── MEGACODE RHYTHM CHANGE ENGINE ──
+            useEffect(() => {
+                if (!isRunning || !trainingMode || !trainingMegacodeRef.current) return;
+                const interval = setInterval(() => {
+                    const now = Date.now();
+                    if (!trainingStartRef.current) return;
+                    const elapsedSecs = Math.floor((now - trainingStartRef.current) / 1000);
+                    const mega = trainingMegacodeRef.current;
+                    const nextStepIndex = trainingStepIndexRef.current + 1;
+                    if (nextStepIndex < mega.steps.length) {
+                        const nextStep = mega.steps[nextStepIndex];
+                        if (elapsedSecs >= nextStep.at) {
+                            trainingStepIndexRef.current = nextStepIndex;
+                            if (nextStep.scenario !== trainingScenarioRef.current) {
+                                trainingScenarioRef.current = nextStep.scenario;
+                                setSelectedScenario(nextStep.scenario);
+                            }
+                            if (nextStep.rhythm) {
+                                handleAction('diagnosis', nextStep.rhythm);
+                            }
+                            setMegacodeMsg(nextStep.msg);
+                            logEvent('evento', 'Megacode', nextStep.msg, elapsedSecs);
+                        }
+                    }
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [isRunning, trainingMode]);
+
+            // ── CLINICAL STATUS UPDATE ──
+            useEffect(() => {
+                if (!trainingMode || !isRunning) return;
+                const v = {
+                    'FV / TVSP': 'ECG: ritmo caótico, fibrilação ventricular/taquicardia ventricular sem pulso. Sem pulsos centrais palpáveis. Inconsciente, apneico.',
+                    'AESP': 'ECG: atividade elétrica organizada (complexos QRS presentes). Sem pulso palpável. Pode ter hipotensão grave ausculta cardíaca com bulhas hipofonéticas.',
+                    'Assistolia': 'ECG: linha reta, sem atividade elétrica cardíaca. Ausculta cardíaca silenciosa. Sem pulsos. Confirme em duas derivações.',
+                    'Bradicardia Sinusal': 'ECG: ondas P seguidas de QRS, FC < 60 bpm. PA pode estar baixa. Paciente pode ter tontura, hipotensão, síncope.',
+                    'TSV': 'ECG: taquicardia com QRS estreito, FC geralmente 150-250 bpm. Ondas P podem não ser visíveis. PA variável.',
+                    'FA': 'ECG: ritmo irregularmente irregular, sem ondas P distintas. FC variável. Risco de instabilidade hemodinâmica.',
+                    'TV Monomórfica': 'ECG: taquicardia com QRS largo e uniforme, FC 100-200 bpm. Se instável, cardioversão sincronizada. Se sem pulso, tratar como PCR.',
+                    'Torsades': 'ECG: TV polimórfica com padrão de torsão do eixo. Associada a QT prolongado. Tratar com sulfato de magnésio.'
+                };
+                const clinical = v[diagnosis] || 'Monitore o paciente e identifique o ritmo cardíaco. Avalie pulso, PA, SatO2 e nível de consciência.';
+                setCurrentStatus({ clinical });
+            }, [diagnosis, trainingMode, isRunning]);
 
             useEffect(() => {
                 if (!isRunning || selectedScenario !== 'cardiacArrest' || !diagnosis || trainingMode) return;
@@ -1192,33 +1292,57 @@
                                     const duration = tr.totalTime ? formatTime(tr.totalTime) : '—';
                                     const stars = tr.score >= 80 ? 3 : tr.score >= 60 ? 2 : tr.score >= 40 ? 1 : 0;
                                     return (
-                                    <div key={tr.id} className="flex items-center p-4 bg-white hover:bg-slate-50 transition-colors">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${tr.score >= 80 ? 'bg-green-100 text-green-600' : tr.score >= 60 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
-                                            <i className="fas fa-star text-sm"></i>
-                                        </div>
-                                        <div className="ml-3 flex-1 min-w-0">
-                                            <h3 className="text-sm font-bold text-slate-800">{SCENARIO_LABELS[tr.scenario] || '—'}</h3>
-                                            <p className="text-xs text-slate-500 mt-0.5 font-medium flex flex-wrap gap-x-2">
-                                                <span>{d.toLocaleDateString('pt-BR')}</span>
-                                                <span>{duration}</span>
-                                                <span className={`font-bold ${tr.score >= 80 ? 'text-green-600' : tr.score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{tr.score} pts</span>
-                                                <span>{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</span>
-                                            </p>
+                                    <div key={tr.id} className="flex items-stretch">
+                                        <div className="flex-1 flex items-center p-4 bg-white hover:bg-slate-50 transition-colors">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${tr.score >= 80 ? 'bg-green-100 text-green-600' : tr.score >= 60 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                                                <i className="fas fa-star text-sm"></i>
+                                            </div>
+                                            <div className="ml-3 flex-1 min-w-0">
+                                                <h3 className="text-sm font-bold text-slate-800">{tr.megacodeLabel || SCENARIO_LABELS[tr.scenario] || '—'}</h3>
+                                                <p className="text-xs text-slate-500 mt-0.5 font-medium flex flex-wrap gap-x-2">
+                                                    <span>{d.toLocaleDateString('pt-BR')}</span>
+                                                    <span>{duration}</span>
+                                                    <span className={`font-bold ${tr.score >= 80 ? 'text-green-600' : tr.score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{tr.score} pts</span>
+                                                    <span>{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</span>
+                                                </p>
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    setModalConfig({
+                                                        show: true,
+                                                        title: 'Detalhes do Treino',
+                                                        message: `${tr.megacodeLabel || SCENARIO_LABELS[tr.scenario] || '—'}\nPontuação: ${tr.score}/100\nDuração: ${duration}\n\nDetalhes:\n${(tr.feedback || []).join('\n')}`,
+                                                        confirmText: 'OK',
+                                                        onConfirm: () => setModalConfig({ show: false }),
+                                                        onCancel: () => setModalConfig({ show: false })
+                                                    });
+                                                }}
+                                                className="px-3 text-slate-300 hover:text-indigo-500 transition-colors"
+                                            >
+                                                <i className="fas fa-info-circle text-sm"></i>
+                                            </button>
                                         </div>
                                         <button 
                                             onClick={() => {
                                                 setModalConfig({
                                                     show: true,
-                                                    title: 'Detalhes do Treino',
-                                                    message: `${SCENARIO_LABELS[tr.scenario] || '—'}\nPontuação: ${tr.score}/100\nDuração: ${duration}\n\nDetalhes:\n${(tr.feedback || []).join('\n')}`,
-                                                    confirmText: 'OK',
-                                                    onConfirm: () => setModalConfig({ show: false }),
+                                                    title: 'Apagar Treino',
+                                                    message: `Deseja apagar o treino de ${d.toLocaleDateString('pt-BR')}?`,
+                                                    confirmText: 'Apagar',
+                                                    cancelText: 'Cancelar',
+                                                    danger: true,
+                                                    onConfirm: () => {
+                                                        const updated = trainingReports.filter(r => r.id !== tr.id);
+                                                        setTrainingReports(updated);
+                                                        localStorage.setItem(STORAGE_TRAINING, JSON.stringify(updated));
+                                                        setModalConfig({ show: false });
+                                                    },
                                                     onCancel: () => setModalConfig({ show: false })
                                                 });
                                             }}
-                                            className="px-3 text-slate-300 hover:text-indigo-500 transition-colors"
+                                            className="px-4 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                                         >
-                                            <i className="fas fa-info-circle text-sm"></i>
+                                            <i className="fas fa-trash-alt text-sm"></i>
                                         </button>
                                     </div>
                                     );
@@ -2213,9 +2337,348 @@
                 </div>
             );
 
+            // ── TRAINING PROCEDURE ──
+            const [trainingTab, setTrainingTab] = useState('acoes');
+            const [vignetteOpen, setVignetteOpen] = useState(true);
+
+            const TRAINING_DRUGS = ['Adrenalina 1mg', 'Amiodarona 300mg', 'Amiodarona 150mg', 'Atropina 0,5mg', 'Adenosina 6mg', 'Adenosina 12mg', 'Dopamina 5mcg/kg/min', 'Dopamina 10mcg/kg/min', 'Lidocaína 100mg', 'Sulfato de Mg 2g'];
+            const TRAINING_AIRWAY = ['Cânula orofaríngea (Guedel)', 'IOT com capnografia', 'Máscara laríngea', 'Ventilação com ambu + O2', 'Oxigênio por máscara não reinalante'];
+            const TRAINING_TEAM = ['Atribuir líder de equipe', 'Atribuir compressor', 'Atribuir ventilação', 'Atribuir acesso IV/IO', 'Comunicação clara (loop fechado)', 'Solicitar carrinho de parada'];
+            const TRAINING_CPR = ['Iniciar compressões', 'Pausar e verificar pulso', 'Trocar operador de compressões', 'Verificar profundidade/recoil', 'Ventilar com 1s por vent'];
+            const TRAINING_OTHER = ['Abrir acesso IV', 'Abrir acesso IO', 'Solicitar ECG 12 derivações', 'Afastar-se antes do choque', 'Verificar monitor/derivações', 'Solicitar exames laboratoriais'];
+            const TRAINING_SKIP_DRUG = 'Não administrar droga neste ciclo';
+
+            const renderTrainingProcedure = () => {
+                const tabs = [
+                    { id: 'acoes', label: 'Ações', icon: 'fa-hand-pointer' },
+                    { id: 'ritmo', label: 'Ritmo', icon: 'fa-heart-pulse' },
+                    { id: 'causas', label: 'Causas', icon: 'fa-search' },
+                    { id: 'relatorio', label: 'Relatório', icon: 'fa-list-alt' }
+                ];
+                const currentTabContent = () => {
+                    switch (trainingTab) {
+                        case 'acoes': return (
+                            <div className="space-y-3">
+                                {/* Drogas */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Drogas</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {TRAINING_DRUGS.map(d => (
+                                            <button key={d} onClick={() => handleAction('drug', d)}
+                                                className="bg-white border border-slate-200 hover:border-blue-300 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-semibold text-slate-700 text-center shadow-sm"
+                                            >{d}</button>
+                                        ))}
+                                        <button onClick={() => handleAction('drug', TRAINING_SKIP_DRUG)}
+                                            className="bg-amber-50 border border-amber-200 hover:border-amber-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-semibold text-amber-700 text-center shadow-sm col-span-2"
+                                        >{TRAINING_SKIP_DRUG}</button>
+                                    </div>
+                                </div>
+                                {/* Desfibrilação / Choque */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Choque</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button onClick={() => handleAction('intervention', 'Desfibrilação 200J')}
+                                            className="bg-red-50 border border-red-200 hover:border-red-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-bold text-red-700 text-center shadow-sm"
+                                        ><i className="fas fa-bolt text-red-600 mr-1"></i>Desfibrilação</button>
+                                        <button onClick={() => handleAction('intervention', 'Cardioversão sincronizada')}
+                                            className="bg-orange-50 border border-orange-200 hover:border-orange-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-bold text-orange-700 text-center shadow-sm"
+                                        ><i className="fas fa-bolt text-orange-600 mr-1"></i>Cardioversão</button>
+                                        <button onClick={() => handleAction('intervention', 'Afastar-se antes do choque')}
+                                            className="bg-yellow-50 border border-yellow-200 hover:border-yellow-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-yellow-700 text-center shadow-sm col-span-2"
+                                        ><i className="fas fa-exclamation-triangle text-yellow-600 mr-1"></i>Verificar segurança — todos afastados</button>
+                                    </div>
+                                </div>
+                                {/* RCP */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">RCP e Via Aérea</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {TRAINING_CPR.map(a => (
+                                            <button key={a} onClick={() => handleAction('intervention', a)}
+                                                className="bg-white border border-slate-200 hover:border-emerald-300 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-slate-700 text-center shadow-sm"
+                                            >{a}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Via Aérea Avançada</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {TRAINING_AIRWAY.map(a => (
+                                            <button key={a} onClick={() => handleAction('intervention', a)}
+                                                className="bg-white border border-slate-200 hover:border-blue-300 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-slate-700 text-center shadow-sm"
+                                            >{a}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Team */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Liderança e Equipe</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {TRAINING_TEAM.map(a => (
+                                            <button key={a} onClick={() => handleAction('intervention', a)}
+                                                className="bg-white border border-slate-200 hover:border-violet-300 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-slate-700 text-center shadow-sm"
+                                            >{a}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Outros */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Outras Ações</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {TRAINING_OTHER.map(a => (
+                                            <button key={a} onClick={() => handleAction('intervention', a)}
+                                                className="bg-white border border-slate-200 hover:border-slate-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-slate-700 text-center shadow-sm"
+                                            >{a}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Marca-passo */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Marca-passo Transcutâneo</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button onClick={() => handleAction('intervention', 'Instalar marca-passo transcutâneo')}
+                                            className="bg-sky-50 border border-sky-200 hover:border-sky-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-bold text-sky-700 text-center shadow-sm"
+                                        >Marcapasso</button>
+                                        <button onClick={() => handleAction('intervention', 'Verificar captura elétrica')}
+                                            className="bg-sky-50 border border-sky-200 hover:border-sky-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-[11px] font-bold text-sky-700 text-center shadow-sm"
+                                        >Verificar captura</button>
+                                    </div>
+                                </div>
+                                {/* Pós-PCR */}
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Pós-PCR</h3>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button onClick={() => handleAction('intervention', 'Solicitar ECG 12 derivações')}
+                                            className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-emerald-700 text-center shadow-sm"
+                                        >ECG 12 derivações</button>
+                                        <button onClick={() => handleAction('intervention', 'Iniciar hipotermia terapêutica')}
+                                            className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-emerald-700 text-center shadow-sm"
+                                        >Hipotermia terapêutica</button>
+                                        <button onClick={() => handleAction('intervention', 'Solicitar exames laboratoriais')}
+                                            className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-emerald-700 text-center shadow-sm"
+                                        >Laboratoriais</button>
+                                        <button onClick={() => handleAction('intervention', 'Transferência para UTI/CCI')}
+                                            className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 active:scale-95 transition-all rounded-xl py-2 px-2 text-[10px] font-semibold text-emerald-700 text-center shadow-sm"
+                                        >Transferir para UTI</button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                        case 'ritmo': return (
+                            <div className="space-y-2">
+                                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-1">
+                                    <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-1.5"><i className="fas fa-monitor mr-1"></i>Monitor</h4>
+                                    <div className="text-[11px] text-indigo-900 leading-relaxed space-y-0.5">
+                                        {currentStatus.clinical || 'Monitore o paciente para identificar o ritmo.'}
+                                    </div>
+                                </div>
+                                <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Diagnosticar Ritmo</h3>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {[
+                                        { r: 'FV / TVSP', desc: 'Ritmo caótico, sem pulso', icon: 'fa-bolt', color: 'text-red-500' },
+                                        { r: 'AESP', desc: 'Atividade elétrica sem pulso', icon: 'fa-heart-crack', color: 'text-amber-500' },
+                                        { r: 'Assistolia', desc: 'Linha reta, sem atividade', icon: 'fa-minus', color: 'text-slate-500' },
+                                        { r: 'Bradicardia Sinusal', desc: 'FC < 60, ondas P presentes', icon: 'fa-heart-pulse', color: 'text-emerald-500' },
+                                        { r: 'TSV', desc: 'FC > 150, QRS estreito', icon: 'fa-wave-square', color: 'text-rose-500' },
+                                        { r: 'FA', desc: 'Irregular, sem ondas P', icon: 'fa-chart-line', color: 'text-orange-500' },
+                                        { r: 'TV Monomórfica', desc: 'QRS largo, FC > 100', icon: 'fa-arrow-trend-up', color: 'text-red-400' },
+                                        { r: 'Torsades', desc: 'TV polimórfica, QT longo', icon: 'fa-tornado', color: 'text-purple-500' }
+                                    ].map(({ r, desc, icon, color }) => (
+                                        <button key={r} onClick={() => handleAction('diagnosis', r)}
+                                            className={`bg-white border hover:border-blue-400 active:scale-95 transition-all rounded-xl py-2.5 px-2 text-center shadow-sm ${diagnosis === r ? 'border-blue-500 ring-2 ring-blue-300 bg-blue-50' : 'border-slate-200'}`}
+                                        >
+                                            <i className={`fas ${icon} ${diagnosis === r ? 'text-blue-600' : color} text-sm mb-0.5`}></i>
+                                            <div className={`text-[11px] font-bold ${diagnosis === r ? 'text-blue-700' : 'text-slate-700'}`}>{r}</div>
+                                            <div className="text-[8px] text-slate-400 font-medium mt-0.5 leading-tight">{desc}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="p-2 bg-blue-50 rounded-xl border border-blue-100">
+                                    <p className="text-[10px] font-medium text-blue-700">
+                                        <i className="fas fa-sync-alt mr-1"></i>O ritmo pode mudar automaticamente durante o megacode. Fique atento!
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                        case 'causas': return (
+                            <div className="space-y-2">
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
+                                    <div className="space-y-1">
+                                        {['Hipovolemia', 'Hipóxia', 'Hidrogênio (Acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
+                                            <button key={causa} onClick={() => setCausaSuspeita(causa)}
+                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                            >{causa}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
+                                    <div className="space-y-1">
+                                        {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
+                                            <button key={causa} onClick={() => setCausaSuspeita(causa)}
+                                                className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                            >{causa}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                        case 'relatorio': return (
+                            <div className="space-y-2">
+                                <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Resumo do Megacode</h3>
+                                {events.length === 0 ? (
+                                    <p className="text-xs text-slate-400 italic">Nenhum evento registrado.</p>
+                                ) : (() => {
+                                    const drugsList = ['Adrenalina', 'Amiodarona', 'Atropina', 'Adenosina', 'Dopamina', 'Lidocaína', 'Sulfato de Mg'];
+                                    const isCA = events.some(e => e.title === 'Diagnosticado FV / TVSP' || e.title === 'Diagnosticado AESP' || e.title === 'Diagnosticado Assistolia');
+                                    if (isCA) {
+                                        const cycleMap = {};
+                                        events.forEach(ev => {
+                                            if (ev.type === 'system') return;
+                                            const c = ev.cycle || Math.floor((parseInt(ev.elapsedTime?.split(':')[0] || '0') * 60 + parseInt(ev.elapsedTime?.split(':')[1] || '0')) / 120) + 1;
+                                            if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
+                                            const row = cycleMap[c];
+                                            if (ev.title.startsWith('Diagnosticado ')) row.rhythm = ev.title.slice('Diagnosticado '.length);
+                                            else if (ev.title.startsWith('Executado Desfibrilação')) row.shock = true;
+                                            else if (ev.title.startsWith('Executado ')) {
+                                                const action = ev.title.slice('Executado '.length);
+                                                if (drugsList.some(d => action.startsWith(d))) { if (!row.drugs.includes(action)) row.drugs.push(action); }
+                                                else { if (!row.interventions.includes(action)) row.interventions.push(action); }
+                                            }
+                                        });
+                                        const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                                        return (
+                                            <div className="overflow-x-auto -mx-3">
+                                                <table className="w-full text-[10px]">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-200 bg-slate-100">
+                                                            <th className="p-1.5 text-left font-bold text-slate-500 w-8">#</th>
+                                                            <th className="p-1.5 text-left font-bold text-slate-500">Ritmo</th>
+                                                            <th className="p-1.5 text-center font-bold text-slate-500 w-10">Choque</th>
+                                                            <th className="p-1.5 text-left font-bold text-slate-500">Drogas</th>
+                                                            <th className="p-1.5 text-left font-bold text-slate-500">Ações</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {cycles.map(row => (
+                                                            <tr key={row.cycle} className="bg-white">
+                                                                <td className="p-1.5 font-bold text-slate-700 align-top">{row.cycle}</td>
+                                                                <td className={`p-1.5 font-semibold align-top ${row.rhythm === 'FV / TVSP' ? 'text-red-600' : row.rhythm ? 'text-blue-600' : 'text-slate-300'}`}>{row.rhythm || '—'}</td>
+                                                                <td className="p-1.5 text-center align-top">{row.shock ? <span className="text-amber-500"><i className="fas fa-bolt text-[10px]"></i></span> : <span className="text-slate-200">—</span>}</td>
+                                                                <td className="p-1.5 text-slate-600 align-top leading-tight">{row.drugs.length ? row.drugs.join(', ') : <span className="text-slate-300">—</span>}</td>
+                                                                <td className="p-1.5 text-slate-600 align-top leading-tight">{row.interventions.length ? row.interventions.slice(0, 3).join(', ') + (row.interventions.length > 3 ? '…' : '') : <span className="text-slate-300">—</span>}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div className="space-y-1 max-h-52 overflow-y-auto">
+                                            {events.slice().reverse().map((ev, i) => (
+                                                <div key={i} className="bg-white border border-slate-100 rounded-lg p-2 text-[10px]">
+                                                    <div className="flex justify-between text-slate-500 mb-0.5">
+                                                        <span className="font-mono">{ev.elapsedTime || '0:00'}</span>
+                                                        <span className={ev.type === 'action' ? 'text-blue-600' : 'text-slate-400'}>{ev.type}</span>
+                                                    </div>
+                                                    <p className="font-semibold text-slate-800">{ev.title}</p>
+                                                    {ev.description && <p className="text-slate-500">{ev.description}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                                <div className="sticky bottom-0 pt-1">
+                                    <button
+                                        onClick={finishTraining}
+                                        className="w-full py-3 rounded-xl font-bold text-sm bg-purple-600 hover:bg-purple-700 text-white shadow-lg active:scale-95 transition-all"
+                                    >
+                                        <i className="fas fa-stop-circle mr-2"></i>Finalizar Treino
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    }
+                };
+                return (
+                    <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto relative">
+                        {/* Top Bar with timer + training badge */}
+                        <header className="bg-slate-900 text-white pt-4 pb-2 px-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-purple-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">TREINO</span>
+                                    <span className="text-slate-400 text-[10px]">{MEGACODE_SCENARIOS.find(s => s.id === (trainingMegacodeRef.current?.id))?.label || ''}</span>
+                                </div>
+                                <button onClick={finishTraining} className="text-purple-300 hover:text-white text-sm transition-colors">
+                                    <i className="fas fa-stop-circle text-lg"></i>
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="font-mono text-xl font-bold tracking-widest text-slate-100">
+                                        {formatTime(elapsedSecs)}
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-400">
+                                        Ciclo {cycleCount}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-xs text-slate-500">Ritmo Atual</div>
+                                    <div className={`font-bold text-sm ${diagnosis === 'FV / TVSP' ? 'text-red-400' : diagnosis === 'AESP' ? 'text-amber-400' : diagnosis === 'Assistolia' ? 'text-slate-500' : 'text-emerald-400'}`}>
+                                        {diagnosis || '—'}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Megacode message */}
+                            {megacodeMsg && (
+                                <div className="mt-1.5 bg-purple-900/40 border border-purple-700/40 rounded-lg px-3 py-1.5 text-[11px] text-purple-200 font-medium">
+                                    <i className="fas fa-arrow-right mr-1 text-[10px]"></i>{megacodeMsg}
+                                </div>
+                            )}
+                            {/* Clinical vignette */}
+                            {trainingMegacodeRef.current?.vignette && (
+                                <div className="mt-1.5">
+                                    <button onClick={() => setVignetteOpen(v => !v)} className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 transition-colors mb-1">
+                                        <i className={`fas fa-chevron-${vignetteOpen ? 'down' : 'right'} text-[8px]`}></i>
+                                        <i className="fas fa-file-lines text-[9px]"></i>
+                                        <span>História do caso</span>
+                                    </button>
+                                    {vignetteOpen && (
+                                        <div className="bg-blue-900/30 border border-blue-700/40 rounded-lg px-3 py-2 text-[11px] text-blue-200 leading-relaxed">
+                                            <i className="fas fa-circle-info mr-1 text-[10px] text-blue-400"></i>
+                                            {trainingMegacodeRef.current.vignette}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </header>
+
+                        {/* Tab buttons */}
+                        <div className="flex bg-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                            {tabs.map(tab => (
+                                <button key={tab.id} onClick={() => setTrainingTab(tab.id)}
+                                    className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors ${trainingTab === tab.id ? 'bg-white text-slate-800 shadow-sm' : 'hover:text-slate-700'}`}
+                                >
+                                    <i className={`fas ${tab.icon} text-xs`}></i>
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-3 hide-scrollbar">
+                            {currentTabContent()}
+                        </div>
+                    </div>
+                );
+            };
+
             // ── PROCEDURE ROUTER ──
             const renderProcedure = () => (
                 <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative">
+                    {trainingMode ? renderTrainingProcedure() : (
+                        <>
                     {renderTopBar()}
                     {renderNotificationBanner()}
                     
@@ -2243,6 +2706,8 @@
                             </button>
                         ))}
                     </div>
+                    </>
+                    )}
                 </div>
             );
 
@@ -2530,7 +2995,7 @@
                                     if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
                                     const row = cycleMap[c];
                                     if (ev.title.startsWith('Diagnosticado ')) row.rhythm = ev.title.slice('Diagnosticado '.length);
-                                    else if (ev.title === 'Executado Desfibrilação') row.shock = true;
+                                    else if (ev.title.startsWith('Executado Desfibrilação')) row.shock = true;
                                     else if (ev.title.startsWith('Executado ')) {
                                         const action = ev.title.slice('Executado '.length);
                                         if (drugsList.includes(action)) { if (!row.drugs.includes(action)) row.drugs.push(action); }
@@ -2619,7 +3084,14 @@
                                     );
                                 })}
                             </div>
-                            <button onClick={() => { setTrainingScore(null); setTrainingMode(false); }} className="w-full py-3 rounded-xl font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-all active:scale-95">
+                            <button onClick={() => {
+                                setTrainingScore(null);
+                                setTrainingMode(false);
+                                setCurrentView('home');
+                                setDiagnosis(null);
+                                setCausaSuspeita(null);
+                                setMegacodeMsg('');
+                            }} className="w-full py-3 rounded-xl font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-all active:scale-95">
                                 Continuar
                             </button>
                         </div>

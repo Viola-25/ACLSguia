@@ -1,0 +1,392 @@
+================================================================================
+LISTA 1: VERIFICAÇÃO DO TESTE DE HABILIDADES DE MANEJO DE VIA AÉREA
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| Etapas de desempenho críticas                                | Marque se realizado corretamente |
+|--------------------------------------------------------------|----------------------------------|
+| **Avaliação e intervenções de SBV**                         |                                  |
+| Verifica a resposta do paciente                             |                                  |
+| • Toca no ombro e pergunta em voz alta "Você está bem?"     |                                  |
+| Aciona o sistema médico de emergência                       |                                  |
+| • Grita por ajuda nas proximidades/Aciona o sistema médico de emergência e busca um DEA |                                  |
+| ou                                                          |                                  |
+| • Encarrega o segundo socorrista de acionar o sistema médico de emergência e buscar o DEA |                                  |
+| Verifica a respiração                                       |                                  |
+| • Examina se o tórax se movimenta (5 a 10 segundos)         |                                  |
+| Verifica o pulso (5 a 10 segundos)                          |                                  |
+| **A verificação da respiração e do pulso pode ser feita simultaneamente** |                                  |
+| Observa que há pulso e não inicia compressões torácicas nem liga o DEA |                                  |
+| Insere uma via aérea orofaríngea ou nasofaríngea            |                                  |
+| Administra oxigênio                                         |                                  |
+| Executa corretamente a ventilação com bolsa-máscara por 1 minuto |                                  |
+| • Administra a frequência de ventilação correta (uma vez a cada 6 segundos) |                                  |
+| • Administra a velocidade de ventilação correta (em 1 segundo) |                                  |
+| • Aplica o volume de ventilação correto (~metade da bolsa)  |                                  |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+
+================================================================================
+LISTA 2: VERIFICAÇÃO DO TESTE DE HABILIDADES DE SBV DE ALTA QUALIDADE EM ADULTOS
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+**Cenário hospitalar:** "Você está trabalhando em um hospital ou clínica e vê que uma pessoa teve um colapso súbito no corredor. Você verifica a segurança do local e aproxima-se do paciente. Demonstre o que você faria em seguida".
+**Cenário pré-hospitalar:** "Você chega ao local em que há suspeita de PCR. A RCP não foi realizada pelas pessoas presentes no local. Você se aproxima do local e verifica se é seguro. Demonstre o que você faria em seguida".
+
+| **Avaliação e ativação** | Marque se realizado corretamente |
+|--------------------------|----------------------------------|
+| Verifica se o paciente responde | [ ] |
+| Verifica a respiração | [ ] |
+| Verifica o pulso | [ ] |
+| Grita por ajuda/aciona o sistema médico de emergência/encarrega alguém de buscar o DEA | [ ] |
+
+*Assim que o aluno grita por ajuda, o instrutor diz: "Vou pegar o DEA".*
+
+| **Compressões** (Dispositivo de feedback audiovisual necessário para precisão) | Marque se realizado corretamente |
+|-------------------------------------------------------------------------------|----------------------------------|
+| Colocação das mãos na metade inferior do esterno | [ ] |
+| Realiza compressões durante 2 minutos (100 a 120/min) | [ ] |
+| Compressões de pelo menos 5 cm | [ ] |
+| Retorno total do tórax. (Opcional, verifique se estiver usando um dispositivo de feedback que mede o retorno do tórax) | [ ] |
+
+*O segundo socorrista diz: "Aqui está o DEA. Vou assumir as compressões e você usa o DEA".*
+
+| **DEA (seguir instruções do DEA)** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| Liga o DEA | [ ] |
+| Coloca as pás corretamente | [ ] |
+| Isola a vítima para análise | [ ] |
+| Isola a vítima para administrar o choque com segurança | [ ] |
+| Aplica um choque com segurança | [ ] |
+| Choca em até 45 segundos após a chegada do DEA | [ ] |
+
+| **Reinicia as compressões** | Marque se realizado corretamente |
+|-----------------------------|----------------------------------|
+| Assegura que as compressões sejam reiniciadas imediatamente após a administração do choque | [ ] |
+| • O aluno instrui diretamente o instrutor a reiniciar as compressões ou | |
+| • O segundo aluno reinicia as compressões | |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+
+================================================================================
+LISTA 3: MEGACODE - CENÁRIOS 1/3/8 (Bradicardia -> TV sem pulso -> AESP -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 2 polegadas (5 cm) [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de bradicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece a bradicardia sintomática | [ ] |
+| Administra o tratamento correto | [ ] |
+| Prepara para tratamento de segunda linha | [ ] |
+| **Tratamento de TV sem pulso** | |
+| Reconhece a TVSP | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Tratamento de AESP** | |
+| Reconhece uma AESP | [ ] |
+| Verbaliza as possíveis causas reversíveis de AESP (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após as verificações de ritmo | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode
+
+================================================================================
+LISTA 4: MEGACODE - CENÁRIOS 2/5 (Bradicardia -> FV -> Assistole -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 5 cm [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de bradicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece a bradicardia sintomática | [ ] |
+| Administra a dose correta de atropina | [ ] |
+| Prepara para tratamento de segunda linha | [ ] |
+| **Tratamento de FV** | |
+| Reconhece uma FV | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Tratamento de assistole** | |
+| Reconhece a assistole | [ ] |
+| Verbaliza as possíveis causas reversíveis de assistole (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após as verificações de ritmo | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode
+
+================================================================================
+LISTA 5: MEGACODE - CENÁRIOS 4/7/10 (Taquicardia -> FV -> AESP -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 5 cm [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de taquicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece uma taquicardia instável | [ ] |
+| Reconhece os sintomas devidos à taquicardia | [ ] |
+| Executa a cardioversão sincronizada imediata | [ ] |
+| **Tratamento de FV** | |
+| Reconhece uma FV | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Tratamento de AESP** | |
+| Reconhece uma AESP | [ ] |
+| Verbaliza as possíveis causas reversíveis de AESP (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após as verificações de ritmo | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode
+
+================================================================================
+LISTA 6: MEGACODE - CENÁRIOS 6/11 (Bradicardia -> FV -> AESP -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 5 cm [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de bradicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece a bradicardia sintomática | [ ] |
+| Administra a dose correta de atropina | [ ] |
+| Prepara para tratamento de segunda linha | [ ] |
+| **Tratamento de FV** | |
+| Reconhece uma FV | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Tratamento de AESP** | |
+| Reconhece uma AESP | [ ] |
+| Verbaliza as possíveis causas reversíveis de AESP (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após as verificações de ritmo | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode
+
+================================================================================
+LISTA 7: MEGACODE - CENÁRIO 9 (Taquicardia -> AESP -> FV -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 5 cm [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de taquicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece a taquicardia (diagnóstico específico) | [ ] |
+| Não reconhece sintomas devidos à taquicardia | [ ] |
+| Pondera sobre o tratamento medicamentoso inicial apropriado | [ ] |
+| **Tratamento de AESP** | |
+| Reconhece uma AESP | [ ] |
+| Verbaliza as possíveis causas reversíveis de AESP (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após verificações de ritmo e pulso | [ ] |
+| **Tratamento de FV** | |
+| Reconhece uma FV | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode
+
+================================================================================
+LISTA 8: MEGACODE - CENÁRIO 12 (Bradicardia -> FV -> Assistole/AESP -> CPPCR)
+================================================================================
+Nome do aluno: _____________________________    Data do teste: _________________
+
+| **Etapas de desempenho críticas** | Marque se realizado corretamente |
+|-----------------------------------|----------------------------------|
+| **Líder da equipe** | |
+| Atribui funções aos membros da equipe | [ ] |
+| Garante uma RCP de alta qualidade todas as vezes: | |
+| Frequência de compressão de 100 a 120/min [ ] | Profundidade da compressão de pelo menos 5 cm [ ] | Fração de compressões torácicas >80% [ ] | Retorno do tórax (opcional) [ ] | Ventilação (opcional) [ ] |
+| Garante que os membros da equipe tenham boa comunicação | [ ] |
+| **Tratamento de bradicardia** | |
+| Inicia oxigênio, se necessário, aplica o monitor, inicia IV | [ ] |
+| Aplica os eletrodos do monitor na posição correta | [ ] |
+| Reconhece a bradicardia sintomática | [ ] |
+| Administra a dose correta de atropina | [ ] |
+| Prepara para tratamento de segunda linha | [ ] |
+| **Tratamento de FV** | |
+| Reconhece uma FV | [ ] |
+| Pede para as pessoas se afastarem antes da análise e do choque | [ ] |
+| Reinicia a RCP imediatamente após os choques | [ ] |
+| Maneja apropriadamente a via aérea | [ ] |
+| Ciclos apropriados de medicamento-verificação de ritmo/choque-RCP | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| **Tratamento de assistole e AESP** | |
+| Reconhece a assistole e AESP | [ ] |
+| Verbaliza as possíveis causas reversíveis de assistole e AESP (Hs e Ts) | [ ] |
+| Administra os fármacos e as doses apropriados | [ ] |
+| Reinicia a RCP imediatamente após as verificações de ritmo | [ ] |
+| **Cuidados pós-PCR** | |
+| Identifica o RCE | [ ] |
+| Garante a medição da PA, a realização do ECG de 12 derivações e o monitoramento da saturação de O2, verbaliza a necessidade de intubação endotraqueal e capnografia com forma de onda e solicita exames laboratoriais | [ ] |
+| Considera o controle direcionado de temperatura | [ ] |
+
+========================================
+**PARAR TESTE**
+========================================
+
+**Anotações do instrutor**
+- Assinale o quadro ao lado de cada passo que o aluno executar com sucesso.
+- Se o aluno não realizar todos os passos corretamente (o que é indicado por pelo menos uma caixa de seleção em branco), ele precisará de recuperação. Anote aqui quais habilidades precisam de recuperação (consulte o manual do Instrutor para obter informações sobre a recuperação).
+
+**Resultados do teste** (Circule APROVADO ou NR para indicar aprovado ou necessidade de recuperação):
+APROVADO    |    NR
+
+Iniciais do instrutor ________    Número do instrutor ________    Data ________
+Competência nas estações de aprendizado (Assinale):
+[ ] Bradicardia   [ ] Taquicardia   [ ] PCR/cuidados pós-PCR   [ ] Prática de Megacode

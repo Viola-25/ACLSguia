@@ -104,6 +104,8 @@
 
         const STORAGE_CURRENT = 'acls_current';
         const STORAGE_REPORTS = 'acls_reports';
+        const STORAGE_TRAINING = 'acls_training_reports';
+        const STORAGE_POSTCARE = 'acls_postcare_state';
 
         const POST_RCP_GUIDANCE = {
             'Hipovolemia': {
@@ -395,6 +397,23 @@
             const [cardioversionDone, setCardioversionDone] = useState(false);
             const [vagalManeuverDone, setVagalManeuverDone] = useState(false);
 
+            // Notifications
+            const [notifications, setNotifications] = useState([]);
+            const lastAdrenalineNotifRef = useRef(0);
+            const lastOperatorChangeRef = useRef(0);
+            const lastRhythmNotifRef = useRef(null);
+            const lastShockNotifRef = useRef(null);
+
+            // Post-care advanced state
+            const [postCareState, setPostCareState] = useState({ ht: { stage: null, startTime: null, targetTime: null }, stemi: { ecg: null, doorToBalloon: null, meds: [] } });
+
+            // Training mode
+            const [trainingMode, setTrainingMode] = useState(false);
+            const [trainingReports, setTrainingReports] = useState([]);
+            const [trainingScore, setTrainingScore] = useState(null);
+            const trainingStartRef = useRef(null);
+            const trainingActionTimes = useRef({});
+
             const audioCtxRef = useRef(null);
             const metronomeIntervalRef = useRef(null);
             const timerRef = useRef(null);
@@ -431,8 +450,8 @@
                                 osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
                                 
                                 gain.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
-                                gain.gain.linearRampToValueAtTime(0.05, audioCtxRef.current.currentTime + 0.01);
-                                gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.1);
+                                gain.gain.linearRampToValueAtTime(0.5, audioCtxRef.current.currentTime + 0.01);
+                                gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.15);
                                 
                                 osc.start(audioCtxRef.current.currentTime);
                                 osc.stop(audioCtxRef.current.currentTime + 0.1);
@@ -474,6 +493,7 @@
                         if (data.outcome) setProcedureOutcome(data.outcome);
                         if (data.selectedScenario) setSelectedScenario(data.selectedScenario);
                         if (data.causaSuspeita) setCausaSuspeita(data.causaSuspeita);
+                        if (data.postCareState) setPostCareState(data.postCareState);
                         if (data.isRunning && data.startTime) {
                             setIsRunning(true);
                             setElapsedSecs(Math.floor((Date.now() - data.startTime) / 1000));
@@ -485,6 +505,10 @@
                     try {
                         const rep = JSON.parse(localStorage.getItem(STORAGE_REPORTS) || '[]');
                         if (Array.isArray(rep)) setReports(rep);
+                    } catch (e) { /* ignore */ }
+                    try {
+                        const tr = JSON.parse(localStorage.getItem(STORAGE_TRAINING) || '[]');
+                        if (Array.isArray(tr)) setTrainingReports(tr);
                     } catch (e) { /* ignore */ }
                 } catch (e) {
                     console.error('Falha ao restaurar dados salvos', e);
@@ -504,13 +528,14 @@
                         currentView,
                         outcome: procedureOutcome,
                         selectedScenario,
-                        causaSuspeita
+                        causaSuspeita,
+                        postCareState
                     };
                     localStorage.setItem(STORAGE_CURRENT, JSON.stringify(data));
                 } catch (e) {
                     console.error('Falha ao salvar dados', e);
                 }
-            }, [events, diagnosis, defibrillationCount, amiodaroneDoseCount, lastAdrenalineTime, startTime, isRunning, currentView, procedureOutcome, selectedScenario, causaSuspeita]);
+            }, [events, diagnosis, defibrillationCount, amiodaroneDoseCount, lastAdrenalineTime, startTime, isRunning, currentView, procedureOutcome, selectedScenario, causaSuspeita, postCareState]);
 
             const cycleSeconds = elapsedSecs % CYCLE_DURATION;
             const adrenalineSeconds = lastAdrenalineTime 
@@ -555,6 +580,10 @@
                 setProcedureOutcome(null);
                 setElapsedSecs(0);
                 setCycleCount(1);
+                setNotifications([]);
+                setPostCareState({ ht: { stage: null, startTime: null, targetTime: null }, stemi: { ecg: null, doorToBalloon: null, meds: [] } });
+                lastAdrenalineNotifRef.current = 0;
+                lastOperatorChangeRef.current = 0;
             };
 
             const handleStartProcedure = (scenario) => {
@@ -579,6 +608,12 @@
             const handleAction = (category, item) => {
                 const actionVerb = category === 'diagnosis' ? 'Diagnosticado' : 'Executado';
                 logEvent('action', `${actionVerb} ${item}`, `${formatTime(elapsedSecs)} de procedimento`);
+                if (trainingMode && trainingStartRef.current) {
+                    const key = `${category}:${item}`;
+                    if (!trainingActionTimes.current[key]) {
+                        trainingActionTimes.current[key] = elapsedSecs;
+                    }
+                }
                 
                 if (category === 'diagnosis') {
                     setDiagnosis(item);
@@ -595,6 +630,7 @@
                         }
                     }
                 } else if (item === 'Desfibrilação') {
+                    dismissNotificationByAction('desfribilacao');
                     const newCount = defibrillationCount + 1;
                     setDefibrillationCount(newCount);
                     const now = Date.now();
@@ -608,6 +644,7 @@
                         setSuggestedAction(null);
                     }
                 } else if (item === 'Adrenalina') {
+                    dismissNotificationByAction('adrenalina');
                     setLastAdrenalineTime(Date.now());
                     setSuggestedAction(null);
                 } else if (item === 'Amiodarona') {
@@ -658,7 +695,12 @@
                 setIsRunning(false);
                 releaseWakeLock();
                 logEvent('system', 'Procedimento finalizado', `Desfecho: RCE — Duração total: ${formatTime(elapsedSecs)}`);
-                setCurrentView('postCare');
+                if (trainingMode) {
+                    finishTraining();
+                    setCurrentView('home');
+                } else {
+                    setCurrentView('postCare');
+                }
             };
 
             const handleOutcomeObito = () => {
@@ -667,7 +709,12 @@
                 releaseWakeLock();
                 logEvent('system', 'Procedimento finalizado', `Desfecho: Óbito — Duração total: ${formatTime(elapsedSecs)}`);
                 setProcedureOutcome('obito');
-                handleSaveComplete('obito', selectedScenario, causaSuspeita);
+                if (trainingMode) {
+                    finishTraining();
+                    setCurrentView('home');
+                } else {
+                    handleSaveComplete('obito', selectedScenario, causaSuspeita);
+                }
             };
 
             const handleOutcomeResolucao = () => {
@@ -676,7 +723,12 @@
                 releaseWakeLock();
                 logEvent('system', 'Procedimento finalizado', `Desfecho: Resolução — Duração total: ${formatTime(elapsedSecs)}`);
                 setProcedureOutcome('resolucao');
-                handleSaveComplete('resolucao', selectedScenario, causaSuspeita);
+                if (trainingMode) {
+                    finishTraining();
+                    setCurrentView('home');
+                } else {
+                    handleSaveComplete('resolucao', selectedScenario, causaSuspeita);
+                }
             };
 
             const handleOutcomeEvolucaoParada = () => {
@@ -821,6 +873,194 @@
                 }
             };
 
+            // ── NOTIFICATION HELPERS ──
+            const playNotificationSound = (urgent = false) => {
+                if (!audioCtxRef.current || isMuted) return;
+                try {
+                    const ctx = audioCtxRef.current;
+                    if (ctx.state === 'suspended') ctx.resume();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = urgent ? 'sawtooth' : 'sine';
+                    osc.frequency.setValueAtTime(urgent ? 880 : 660, ctx.currentTime);
+                    if (urgent) {
+                        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.3);
+                        setTimeout(() => {
+                            const osc2 = ctx.createOscillator();
+                            const gain2 = ctx.createGain();
+                            osc2.connect(gain2);
+                            gain2.connect(ctx.destination);
+                            osc2.type = 'sawtooth';
+                            osc2.frequency.setValueAtTime(1100, ctx.currentTime);
+                            gain2.gain.setValueAtTime(0.4, ctx.currentTime);
+                            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                            osc2.start(ctx.currentTime);
+                            osc2.stop(ctx.currentTime + 0.4);
+                        }, 200);
+                    } else {
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.15);
+                    }
+                } catch (e) { /* ignore */ }
+            };
+
+            const triggerVibrate = (pattern = 200) => {
+                try { if ('vibrate' in navigator) navigator.vibrate(pattern); } catch (e) { /* ignore */ }
+            };
+
+            const addNotification = (type, message, actionId = null) => {
+                const id = Date.now() + Math.random();
+                setNotifications(prev => [...prev, { id, type, message, actionId, time: Date.now() }]);
+                playNotificationSound(type === 'shock' || type === 'adrenaline');
+                if (type === 'shock' || type === 'adrenaline') triggerVibrate([200, 100, 200]);
+                logEvent('alerta', `[Alerta] ${message}`, `Tipo: ${type}`);
+                return id;
+            };
+
+            const dismissNotification = (id) => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            };
+
+            const dismissNotificationByAction = (actionId) => {
+                setNotifications(prev => prev.filter(n => n.actionId !== actionId));
+            };
+
+            // ── TRAINING MODE ──
+            const TRAINING_SCENARIOS = [
+                { scenario: 'cardiacArrest', initialRhythm: 'FV / TVSP', label: 'Parada Cardíaca (FV/TVSP)' },
+                { scenario: 'cardiacArrest', initialRhythm: 'AESP', label: 'Parada Cardíaca (AESP)' },
+                { scenario: 'cardiacArrest', initialRhythm: 'Assistolia', label: 'Parada Cardíaca (Assistolia)' },
+                { scenario: 'bradycardia', label: 'Bradiarritmia Sintomática' },
+                { scenario: 'tachycardia', label: 'Taquiarritmia Instável' },
+                { scenario: 'tachycardia', label: 'Taquiarritmia Estável (TSV)' },
+            ];
+
+            const handleStartTraining = () => {
+                const pick = TRAINING_SCENARIOS[Math.floor(Math.random() * TRAINING_SCENARIOS.length)];
+                fullResetState();
+                setTrainingMode(true);
+                setTrainingScore(null);
+                setSelectedScenario(pick.scenario);
+                const now = Date.now();
+                setStartTime(now);
+                setIsRunning(true);
+                setCurrentView('procedure');
+                localStorage.removeItem(STORAGE_CURRENT);
+                trainingStartRef.current = now;
+                trainingActionTimes.current = {};
+                logEvent('system', 'Treino iniciado', `${pick.label} — ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`, 0);
+                requestWakeLock();
+                if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+                if (pick.scenario === 'cardiacArrest' && pick.initialRhythm) {
+                    setTimeout(() => {
+                        handleAction('diagnosis', pick.initialRhythm);
+                    }, 500);
+                }
+            };
+
+            const calculateTrainingScore = () => {
+                const times = trainingActionTimes.current;
+                const firstDiagnosis = events.find(e => e.type === 'action' && e.title.startsWith('Diagnosticado '));
+                const firstShock = events.find(e => e.title === 'Executado Desfibrilação');
+                const firstAdrenaline = events.find(e => e.title === 'Executado Adrenalina');
+                const firstDiagnosisTime = firstDiagnosis ? parseInt(firstDiagnosis.elapsedTime.split(':')[0]) * 60 + parseInt(firstDiagnosis.elapsedTime.split(':')[1]) : null;
+                const firstShockTime = firstShock ? parseInt(firstShock.elapsedTime.split(':')[0]) * 60 + parseInt(firstShock.elapsedTime.split(':')[1]) : null;
+                const firstAdrenalineTime = firstAdrenaline ? parseInt(firstAdrenaline.elapsedTime.split(':')[0]) * 60 + parseInt(firstAdrenaline.elapsedTime.split(':')[1]) : null;
+                let score = 0;
+                const feedback = [];
+                if (firstDiagnosisTime !== null && firstDiagnosisTime <= 30) { score += 10; feedback.push('✓ Diagnóstico rápido (≤30s): +10 pts'); }
+                else if (firstDiagnosisTime !== null) { score += 5; feedback.push('✓ Diagnóstico realizado: +5 pts'); }
+                else { feedback.push('✗ Diagnóstico não realizado'); }
+                if (selectedScenario === 'cardiacArrest') {
+                    if (diagnosis === 'FV / TVSP') {
+                        if (firstShockTime !== null && firstShockTime <= 180) { score += 15; feedback.push('✓ Choque no tempo correto (≤3min): +15 pts'); }
+                        else if (firstShockTime !== null) { score += 8; feedback.push('✓ Choque realizado (fora do tempo ideal): +8 pts'); }
+                        else { feedback.push('✗ Choque não realizado para FV/TVSP'); }
+                    } else {
+                        const hasShock = events.find(e => e.title === 'Executado Desfibrilação');
+                        if (!hasShock) { score += 10; feedback.push('✓ Corretamente não aplicou choque em ritmo não chocável: +10 pts'); }
+                        else { feedback.push('✗ Choque aplicado em ritmo não chocável: -5 pts'); score -= 5; }
+                    }
+                    if (firstAdrenalineTime !== null && firstAdrenalineTime <= 300) { score += 10; feedback.push('✓ Adrenalina no tempo correto (≤5min): +10 pts'); }
+                    else if (firstAdrenalineTime !== null) { score += 5; feedback.push('✓ Adrenalina administrada: +5 pts'); }
+                    else if (diagnosis === 'AESP' || diagnosis === 'Assistolia') { feedback.push('✗ Adrenalina não administrada'); }
+                }
+                if (causaSuspeita) { score += 10; feedback.push('✓ Causa reversível identificada: +10 pts'); }
+                const totalActions = events.filter(e => e.type === 'action').length;
+                if (totalActions >= 3) { score += 5; feedback.push('✓ Múltiplas ações registradas: +5 pts'); }
+                score = Math.max(0, Math.min(100, score));
+                return { score, feedback };
+            };
+
+            const finishTraining = () => {
+                setIsRunning(false);
+                releaseWakeLock();
+                const { score, feedback } = calculateTrainingScore();
+                setTrainingScore(score);
+                logEvent('system', 'Treino finalizado', `Pontuação: ${score}/100 — Duração: ${formatTime(elapsedSecs)}`);
+                const trainingReport = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    scenario: selectedScenario,
+                    totalTime: elapsedSecs,
+                    score,
+                    feedback,
+                    events,
+                    diagnosis,
+                    causaSuspeita
+                };
+                const updated = [...trainingReports, trainingReport];
+                setTrainingReports(updated);
+                try {
+                    localStorage.setItem(STORAGE_TRAINING, JSON.stringify(updated));
+                } catch (e) { /* ignore */ }
+                trainingStartRef.current = null;
+                trainingActionTimes.current = {};
+            };
+
+            // ── NOTIFICATION MONITORING ──
+            useEffect(() => {
+                if (!isRunning || selectedScenario !== 'cardiacArrest' || trainingMode) return;
+                if (suggestedAction === 'reavaliar_ritmo' && cycleCount > 1 && cycleCount !== lastRhythmNotifRef.current) {
+                    lastRhythmNotifRef.current = cycleCount;
+                    addNotification('rhythm', 'Reavaliar ritmo — fim do ciclo de RCP', 'reavaliar_ritmo');
+                }
+                if (cycleCount > 1 && cycleCount !== lastOperatorChangeRef.current) {
+                    lastOperatorChangeRef.current = cycleCount;
+                    addNotification('info', 'Trocar operador de RCP — compressões por 2 min');
+                }
+            }, [cycleCount, suggestedAction, trainingMode]);
+
+            useEffect(() => {
+                if (!isRunning || selectedScenario !== 'cardiacArrest' || !diagnosis || trainingMode) return;
+                if (diagnosis === 'FV / TVSP' && diagnosis !== lastShockNotifRef.current) {
+                    lastShockNotifRef.current = diagnosis;
+                    addNotification('shock', 'CHOQUE INDICADO — Desfibrilar imediatamente!', 'desfribilacao');
+                }
+            }, [diagnosis, trainingMode]);
+
+            useEffect(() => {
+                if (!isRunning || selectedScenario !== 'cardiacArrest' || trainingMode) return;
+                const interval = setInterval(() => {
+                    const now = Date.now();
+                    const elapsed = lastAdrenalineTime ? now - lastAdrenalineTime : 0;
+                    if (elapsed > 240000 && now - lastAdrenalineNotifRef.current > 60000) {
+                        lastAdrenalineNotifRef.current = now;
+                        addNotification('adrenaline', 'Administrar Adrenalina 1mg IV/IO (a cada 3-5 min)', 'adrenalina');
+                    }
+                }, 10000);
+                return () => clearInterval(interval);
+            }, [isRunning, selectedScenario, lastAdrenalineTime, trainingMode]);
+
             useEffect(() => {
                 const handleVisibilityChange = () => {
                     if (document.visibilityState === 'visible' && isRunning) {
@@ -865,6 +1105,7 @@
                     
                     <div className="flex bg-white shadow-sm z-0">
                         <button onClick={() => setHomeTab('rcps')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'rcps' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600'}`}>Registros</button>
+                        <button onClick={() => setHomeTab('treinos')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'treinos' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-400 hover:text-slate-600'}`}>Treinos</button>
                         <button onClick={() => setHomeTab('estatisticas')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'estatisticas' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600'}`}>Estatísticas</button>
                     </div>
                     
@@ -925,6 +1166,59 @@
                                             className="px-4 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                                         >
                                             <i className="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                    )}
+
+                    {homeTab === 'treinos' && (
+                    <div className="flex-1 overflow-y-auto animate-fade-in hide-scrollbar">
+                        {trainingReports.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-center min-h-full">
+                                <div className="w-28 h-28 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-300 shadow-inner">
+                                    <i className="fas fa-graduation-cap text-5xl"></i>
+                                </div>
+                                <h2 className="text-xl font-bold text-slate-700 mb-2">Nenhum Treino</h2>
+                                <p className="text-slate-500 text-sm">Complete uma simulação no modo treino para ver seu desempenho.</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {[...trainingReports].reverse().map((tr) => {
+                                    const d = new Date(tr.date);
+                                    const duration = tr.totalTime ? formatTime(tr.totalTime) : '—';
+                                    const stars = tr.score >= 80 ? 3 : tr.score >= 60 ? 2 : tr.score >= 40 ? 1 : 0;
+                                    return (
+                                    <div key={tr.id} className="flex items-center p-4 bg-white hover:bg-slate-50 transition-colors">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${tr.score >= 80 ? 'bg-green-100 text-green-600' : tr.score >= 60 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+                                            <i className="fas fa-star text-sm"></i>
+                                        </div>
+                                        <div className="ml-3 flex-1 min-w-0">
+                                            <h3 className="text-sm font-bold text-slate-800">{SCENARIO_LABELS[tr.scenario] || '—'}</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5 font-medium flex flex-wrap gap-x-2">
+                                                <span>{d.toLocaleDateString('pt-BR')}</span>
+                                                <span>{duration}</span>
+                                                <span className={`font-bold ${tr.score >= 80 ? 'text-green-600' : tr.score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{tr.score} pts</span>
+                                                <span>{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</span>
+                                            </p>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setModalConfig({
+                                                    show: true,
+                                                    title: 'Detalhes do Treino',
+                                                    message: `${SCENARIO_LABELS[tr.scenario] || '—'}\nPontuação: ${tr.score}/100\nDuração: ${duration}\n\nDetalhes:\n${(tr.feedback || []).join('\n')}`,
+                                                    confirmText: 'OK',
+                                                    onConfirm: () => setModalConfig({ show: false }),
+                                                    onCancel: () => setModalConfig({ show: false })
+                                                });
+                                            }}
+                                            className="px-3 text-slate-300 hover:text-indigo-500 transition-colors"
+                                        >
+                                            <i className="fas fa-info-circle text-sm"></i>
                                         </button>
                                     </div>
                                     );
@@ -1052,6 +1346,12 @@
                             <span>Taquiarritmia</span>
                         </button>
                     </div>
+                    <div className="px-4 pb-4 bg-white">
+                        <button onClick={handleStartTraining} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-2xl shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] transition-all active:scale-95 text-sm flex items-center justify-center gap-2">
+                            <i className="fas fa-graduation-cap text-lg"></i>
+                            <span>Modo Treino</span>
+                        </button>
+                    </div>
                 </div>
             );
 
@@ -1116,10 +1416,21 @@
                             </button>
                             <span className="text-[9px] text-slate-500 font-medium ml-0.5">BPM</span>
                         </div>
+                        {trainingMode && selectedScenario === 'cardiacArrest' && (
+                        <button onClick={() => { const target = ((cycleCount) * CYCLE_DURATION - 15) * 1000; setStartTime(Date.now() - target); }} className="px-2 flex items-center gap-1 text-[10px] font-bold text-amber-400 hover:text-amber-300 border-r border-slate-700 transition-colors" title="Avançar para o final do ciclo">
+                            <i className="fas fa-forward"></i>
+                        </button>
+                        )}
                         <div className="px-2 flex items-center border-r border-slate-700" title={wakeLockActive ? 'Tela não desliga' : !('wakeLock' in navigator) ? 'Wake Lock não suportado neste navegador' : 'Tela pode desligar'}>
                             <i className={`fas fa-moon text-xs ${wakeLockActive ? 'text-emerald-400' : 'text-slate-600'}`}></i>
                         </div>
-                        <button onClick={requestFinish} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+                        {trainingMode && (
+                        <div className="px-2 flex items-center gap-1 bg-indigo-600 text-white font-bold text-[9px] tracking-wider uppercase">
+                            <i className="fas fa-graduation-cap"></i>
+                            <span>Treino</span>
+                        </div>
+                        )}
+                        <button onClick={requestFinish} className={`flex-1 ${trainingMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-red-600 hover:bg-red-700'} text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5`}>
                             <i className="fas fa-stop-circle"></i> Finalizar
                         </button>
                     </div>
@@ -1141,7 +1452,7 @@
                             {/* Rhythm Selection */}
                             <div className="flex flex-col min-h-0">
                                 <h3 className="text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                                    {suggestedAction === 'reavaliar_ritmo' ? (
+                                    {suggestedAction === 'reavaliar_ritmo' && !trainingMode ? (
                                         <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
                                     ) : (
                                         <span className="text-slate-400">Ritmo Cardíaco</span>
@@ -1160,7 +1471,7 @@
                                                         ? isVF 
                                                             ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-lg' 
                                                             : 'bg-slate-700 text-white border-slate-600 ring-2 ring-slate-400 ring-offset-1 shadow-lg'
-                                                        : suggestedAction === 'reavaliar_ritmo' 
+                                                        : suggestedAction === 'reavaliar_ritmo' && !trainingMode 
                                                             ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' 
                                                             : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                 }`}
@@ -1192,12 +1503,12 @@
                                                     <button 
                                                         onClick={() => handleAction('intervention', 'Desfibrilação')}
                                                         className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
-                                                            suggestedAction === 'desfribilacao' 
+                                                            suggestedAction === 'desfribilacao' && !trainingMode
                                                                 ? 'animate-pulse-urgent bg-red-500 border-red-400 text-white' 
                                                                 : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
                                                         }`}
                                                     >
-                                                        {suggestedAction === 'desfribilacao' ? '▶ DESFIBRILAR AGORA' : `Desfibrilação (${defibrillationCount})`}
+                                                        {suggestedAction === 'desfribilacao' && !trainingMode ? '▶ DESFIBRILAR AGORA' : `Desfibrilação (${defibrillationCount})`}
                                                     </button>
                                                 </div>
                                                 {defibrillationCount > 0 && (
@@ -1225,7 +1536,7 @@
                                                     <button 
                                                         onClick={() => handleAction('therapy', 'Adrenalina')}
                                                         className={`rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 ${
-                                                            suggestedAction === 'adrenalina' 
+                                                            suggestedAction === 'adrenalina' && !trainingMode
                                                                 ? 'animate-pulse-urgent bg-blue-500 border-blue-400 text-white ring-2 ring-blue-300' 
                                                                 : 'bg-blue-100 border-blue-400 text-blue-800 hover:bg-blue-200'
                                                         }`}
@@ -1237,7 +1548,7 @@
                                                         <button 
                                                             onClick={() => handleAction('therapy', 'Amiodarona')}
                                                             className={`rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 ${
-                                                                suggestedAction === 'amiodarona' 
+                                                                suggestedAction === 'amiodarona' && !trainingMode
                                                                     ? 'animate-pulse-urgent bg-purple-500 border-purple-400 text-white ring-2 ring-purple-300' 
                                                                     : 'bg-purple-100 border-purple-400 text-purple-800 hover:bg-purple-200'
                                                             }`}
@@ -1286,7 +1597,7 @@
                                                 <button 
                                                     onClick={() => handleAction('therapy', 'Adrenalina')}
                                                     className={`w-full py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
-                                                        suggestedAction === 'adrenalina' 
+                                                        suggestedAction === 'adrenalina' && !trainingMode
                                                             ? 'animate-pulse-urgent bg-red-500 border-red-400 text-white' 
                                                             : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
                                                     }`}
@@ -1906,6 +2217,7 @@
             const renderProcedure = () => (
                 <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative">
                     {renderTopBar()}
+                    {renderNotificationBanner()}
                     
                     <div className="flex-1 overflow-hidden flex flex-col relative">
                         {selectedScenario === 'cardiacArrest' && renderCardiacArrestProcedure()}
@@ -1937,6 +2249,7 @@
             // ── POST-CARE ──
             const renderPostCare = () => {
                 const causaInfo = POST_RCP_GUIDANCE[causaSuspeita];
+                const { ht, stemi } = postCareState;
                 return (
                     <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
                         <header className="bg-slate-800 text-white p-5 flex items-center shadow-md z-10">
@@ -1967,7 +2280,7 @@
                             </div>
 
                             {/* Targeted guidance if cause selected */}
-                            {causaInfo && (
+                            {causaInfo && causaSuspeita !== 'Hipotermia' && causaSuspeita !== 'Trombose coronariana' && (
                                 <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 mb-4 shadow-sm">
                                     <h3 className="font-bold text-green-800 text-sm flex items-center gap-2 mb-2">
                                         <i className={`fas ${causaInfo.icon}`}></i>
@@ -1983,6 +2296,132 @@
                                                 <span className="text-xs font-medium text-slate-700">{action}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Hipotermia Terapêutica Protocol */}
+                            {causaSuspeita === 'Hipotermia' && (
+                                <div className="bg-blue-50 border-2 border-blue-400 rounded-2xl p-4 mb-4 shadow-sm">
+                                    <h3 className="font-bold text-blue-800 text-sm flex items-center gap-2 mb-3">
+                                        <i className="fas fa-temperature-low text-blue-600"></i>
+                                        Protocolo de Hipotermia Terapêutica
+                                    </h3>
+                                    <p className="text-[10px] text-blue-700 font-medium mb-3">Meta de temperatura: 32–36°C · Paciente comatoso (não obedece comandos)</p>
+                                    
+                                    {/* Stage: Induction */}
+                                    <div className={`rounded-xl p-3 mb-2 border-2 transition-all ${ht.stage === 'induction' ? 'bg-blue-100 border-blue-500' : ht.stage && ht.stage !== 'induction' ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'}`}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-xs text-slate-700">1. Indução</span>
+                                            {ht.stage === 'induction' && <span className="text-[10px] font-bold text-blue-600 animate-blink"><i className="fas fa-spinner fa-spin mr-1"></i>Em andamento</span>}
+                                            {ht.stage && ht.stage !== 'induction' && <span className="text-[10px] font-bold text-green-600"><i className="fas fa-check mr-1"></i>Concluído</span>}
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mb-2">Infusão de soro fisiológico gelado (30mL/kg) · Bolsas de gelo em axilas, virilhas e pescoço</p>
+                                        {!ht.stage && (
+                                            <button onClick={() => { setPostCareState(prev => ({ ...prev, ht: { ...prev.ht, stage: 'induction', startTime: Date.now() } })); logEvent('system', 'HT: Iniciada indução de hipotermia'); }} className="w-full py-2 rounded-lg font-bold text-xs bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95">
+                                                Iniciar Resfriamento
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Stage: Maintenance */}
+                                    <div className={`rounded-xl p-3 mb-2 border-2 transition-all ${ht.stage === 'maintenance' ? 'bg-blue-100 border-blue-500' : ht.stage === 'rewarming' ? 'bg-green-50 border-green-300' : ht.stage ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 opacity-50'}`}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-xs text-slate-700">2. Manutenção</span>
+                                            {ht.stage === 'maintenance' && <span className="text-[10px] font-bold text-blue-600 animate-blink"><i className="fas fa-spinner fa-spin mr-1"></i>Em andamento</span>}
+                                            {ht.stage === 'rewarming' && <span className="text-[10px] font-bold text-green-600"><i className="fas fa-check mr-1"></i>Concluído</span>}
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mb-2">Manter 32-36°C por 24h · Sedação · Bloqueador neuromuscular se calafrios</p>
+                                        {ht.stage === 'induction' && (
+                                            <button onClick={() => { setPostCareState(prev => ({ ...prev, ht: { ...prev.ht, stage: 'maintenance', targetTime: Date.now() } })); logEvent('system', 'HT: Atingiu temperatura alvo, iniciada manutenção'); }} className="w-full py-2 rounded-lg font-bold text-xs bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95">
+                                                Atingiu Alvo (32-36°C)
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Stage: Rewarming */}
+                                    <div className={`rounded-xl p-3 mb-2 border-2 transition-all ${ht.stage === 'rewarming' ? 'bg-amber-100 border-amber-500' : ht.stage ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 opacity-50'}`}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-xs text-slate-700">3. Reaquecimento</span>
+                                            {ht.stage === 'rewarming' && <span className="text-[10px] font-bold text-amber-600 animate-blink"><i className="fas fa-spinner fa-spin mr-1"></i>Em andamento</span>}
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mb-2">Reaquecer 0.25-0.5°C/h · Não ultrapassar 37°C · Monitorar arritmias</p>
+                                        {ht.stage === 'maintenance' && (
+                                            <button onClick={() => { setPostCareState(prev => ({ ...prev, ht: { ...prev.ht, stage: 'rewarming' } })); logEvent('system', 'HT: Iniciado reaquecimento'); }} className="w-full py-2 rounded-lg font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 transition-all active:scale-95">
+                                                Iniciar Reaquecimento
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* HT Monitoring Checklist */}
+                                    <div className="bg-white rounded-xl p-3 border border-slate-200 mt-1">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-1.5">Monitorização:</p>
+                                        <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                            {['ECG contínuo', 'Temperatura central', 'Gasometria seriada', 'Lactato', 'Glicemia capilar', 'K+, Mg++, Ca++'].map((item, i) => (
+                                                <div key={i} className="flex items-center gap-1 text-slate-600">
+                                                    <input type="checkbox" className="rounded border-slate-300 text-blue-600" id={`ht-check-${i}`} />
+                                                    <label htmlFor={`ht-check-${i}`} className="cursor-pointer">{item}</label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEMI / IAM Flow */}
+                            {causaSuspeita === 'Trombose coronariana' && (
+                                <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-4 mb-4 shadow-sm">
+                                    <h3 className="font-bold text-red-800 text-sm flex items-center gap-2 mb-3">
+                                        <i className="fas fa-heart-pulse text-red-600"></i>
+                                        Algoritmo IAM com Supra (STEMI)
+                                    </h3>
+                                    
+                                    {/* Door-to-Balloon Timer */}
+                                    <div className="bg-white border-2 border-red-300 rounded-xl p-3 mb-2 shadow-sm">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-xs text-red-700"><i className="fas fa-clock mr-1"></i>Porta-Balão</span>
+                                            <span className={`text-xs font-bold ${stemi.doorToBalloon ? (stemi.doorToBalloon < 90 ? 'text-green-600' : 'text-red-600') : 'text-slate-400'}`}>
+                                                {stemi.doorToBalloon !== null ? `${stemi.doorToBalloon} min` : '—'} 
+                                                {stemi.doorToBalloon !== null && (stemi.doorToBalloon < 90 ? '✓ Meta' : '⚠ Excedido')}
+                                            </span>
+                                        </div>
+                                        {stemi.doorToBalloon === null && (
+                                            <button onClick={() => { setPostCareState(prev => ({ ...prev, stemi: { ...prev.stemi, doorToBalloon: 0, startTime: Date.now() } })); const t = setInterval(() => { setPostCareState(p => { const elapsed = Math.floor((Date.now() - p.stemi.startTime) / 60000); return { ...p, stemi: { ...p.stemi, doorToBalloon: elapsed } }; }); }, 60000); window._stemiTimer = t; logEvent('system', 'STEMI: Iniciado cronômetro porta-balão'); }} className="w-full py-2 rounded-lg font-bold text-xs bg-red-600 text-white hover:bg-red-700 transition-all active:scale-95">
+                                                Iniciar Cronômetro Porta-Balão (meta &lt; 90 min)
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* ECG Options */}
+                                    <div className="bg-white rounded-xl p-3 mb-2 border border-slate-200">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-1.5">ECG de 12 Derivações:</p>
+                                        <div className="flex gap-1.5">
+                                            {[{ label: 'IAM Anterior', ecg: 'anterior' }, { label: 'IAM Inferior', ecg: 'inferior' }, { label: 'IAM Lateral', ecg: 'lateral' }].map(opt => (
+                                                <button key={opt.ecg} onClick={() => { setPostCareState(prev => ({ ...prev, stemi: { ...prev.stemi, ecg: opt.ecg } })); logEvent('system', `STEMI: ECG ${opt.label}`); }} className={`flex-1 py-2 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${stemi.ecg === opt.ecg ? 'bg-red-500 border-red-400 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* STEMI Medications Checklist */}
+                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-1.5">Medicações:</p>
+                                        <div className="space-y-1">
+                                            {[
+                                                { label: 'AAS 162-325 mg mastigável', id: 'aas' },
+                                                { label: 'Nitrato sublingual (se dor torácica)', id: 'nitrato' },
+                                                { label: 'Morfina 2-4 mg IV (se dor refratária)', id: 'morfina' },
+                                                { label: 'Heparina não fracionada 60 UI/kg (máx 4000)', id: 'heparina' },
+                                                { label: 'Ticagrelor 180 mg ou Prasugrel 60 mg', id: 'antiagregante' },
+                                                { label: 'Trombolítico (se sem hemodinâmica disponível)', id: 'trombolitico' }
+                                            ].map(med => (
+                                                <div key={med.id} className="flex items-center gap-2">
+                                                    <input type="checkbox" className="rounded border-slate-300 text-red-600" id={`stemi-${med.id}`} checked={stemi.meds.includes(med.id)} onChange={(e) => { setPostCareState(prev => ({ ...prev, stemi: { ...prev.stemi, meds: e.target.checked ? [...prev.stemi.meds, med.id] : prev.stemi.meds.filter(m => m !== med.id) } })); if (e.target.checked) logEvent('system', `STEMI: Administrado ${med.label}`); }} />
+                                                    <label htmlFor={`stemi-${med.id}`} className="text-[10px] text-slate-600 cursor-pointer">{med.label}</label>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2019,6 +2458,25 @@
                                 <i className="fas fa-save"></i> Salvar Relatório
                             </button>
                         </div>
+                    </div>
+                );
+            };
+
+            // ── NOTIFICATION BANNER ──
+            const renderNotificationBanner = () => {
+                if (trainingMode || notifications.length === 0) return null;
+                const n = notifications[notifications.length - 1];
+                const bgColor = n.type === 'shock' ? 'bg-red-600' : n.type === 'adrenaline' ? 'bg-blue-600' : n.type === 'rhythm' ? 'bg-amber-500' : 'bg-slate-600';
+                const icon = n.type === 'shock' ? 'fa-bolt' : n.type === 'adrenaline' ? 'fa-syringe' : n.type === 'rhythm' ? 'fa-heart-pulse' : 'fa-info-circle';
+                return (
+                    <div className={`${bgColor} text-white px-4 py-2 flex items-center gap-3 animate-fade-in shadow-lg`}>
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                            <i className={`fas ${icon} text-sm`}></i>
+                        </div>
+                        <p className="text-xs font-bold flex-1">{n.message}</p>
+                        <button onClick={() => dismissNotification(n.id)} className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors shrink-0">
+                            <i className="fas fa-times text-xs"></i>
+                        </button>
                     </div>
                 );
             };
@@ -2131,6 +2589,44 @@
                 );
             };
 
+            const renderTrainingDebrief = () => {
+                if (trainingScore === null) return null;
+                const score = trainingScore;
+                const stars = score >= 80 ? 3 : score >= 60 ? 2 : score >= 40 ? 1 : 0;
+                const color = score >= 80 ? 'text-green-600' : score >= 60 ? 'text-amber-600' : 'text-red-600';
+                const bgColor = score >= 80 ? 'bg-green-50 border-green-400' : score >= 60 ? 'bg-amber-50 border-amber-400' : 'bg-red-50 border-red-400';
+                const lastTraining = trainingReports[trainingReports.length - 1];
+                const fb = lastTraining?.feedback || [];
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+                        <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 ${bgColor}`}>
+                            <div className="text-center mb-4">
+                                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-slate-100">
+                                    <i className={`fas fa-star text-2xl ${color}`}></i>
+                                </div>
+                                <h2 className="text-lg font-bold text-slate-800">Debriefing</h2>
+                                <div className={`text-4xl font-black mt-2 ${color}`}>{score}/100</div>
+                                <div className="text-lg mt-1 text-slate-500">{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</div>
+                            </div>
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto mb-4">
+                                {fb.map((f, i) => {
+                                    const isGood = f.startsWith('✓');
+                                    return (
+                                        <div key={i} className={`flex items-start gap-2 p-2 rounded-lg text-xs font-medium ${isGood ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                            <i className={`fas ${isGood ? 'fa-check-circle' : 'fa-times-circle'} mt-0.5`}></i>
+                                            <span>{f.slice(2)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <button onClick={() => { setTrainingScore(null); setTrainingMode(false); }} className="w-full py-3 rounded-xl font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-all active:scale-95">
+                                Continuar
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
             return (
                 <>
                     {viewingReport && renderReportView()}
@@ -2148,6 +2644,7 @@
                         onEvolucaoParada={handleOutcomeEvolucaoParada}
                         onCancel={() => setOutcomeModal(false)}
                     />
+                    {trainingScore !== null && renderTrainingDebrief()}
                 </>
             );
         };

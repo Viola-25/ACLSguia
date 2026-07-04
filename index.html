@@ -12,7 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         
         body { 
             font-family: 'Inter', sans-serif; 
@@ -39,6 +39,14 @@
             animation: pulseSoft 0.545s infinite;
         }
 
+        @keyframes pulseUrgent {
+            0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+            50% { transform: scale(1.02); opacity: 0.9; box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+        }
+        .animate-pulse-urgent {
+            animation: pulseUrgent 1s infinite;
+        }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -62,9 +70,17 @@
         .pb-safe {
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
+
+        .diamond-shape {
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid currentColor;
+        }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-slate-900">
     <div id="root" class="h-dynamic w-screen flex justify-center bg-black"></div>
 
     <script type="text/babel">
@@ -88,6 +104,125 @@
 
         const STORAGE_CURRENT = 'acls_current';
         const STORAGE_REPORTS = 'acls_reports';
+
+        const POST_RCP_GUIDANCE = {
+            'Hipovolemia': {
+                title: 'Hipovolemia',
+                icon: 'fa-droplet',
+                actions: [
+                    'Administrar fluidos IV/IO (cristaloides 1-2L)',
+                    'Considerar hemoderivados se suspecta de hemorragia',
+                    'Controlar fonte de sangramento ativo',
+                    'Reavaliar perfusão tecidual (PAM > 65 mmHg)',
+                    'Solicitar tipagem sanguínea e prova cruzada'
+                ]
+            },
+            'Hipóxia': {
+                title: 'Hipóxia',
+                icon: 'fa-lungs',
+                actions: [
+                    'Garantir via aérea pérvia (IOT se necessário)',
+                    'Ventilar com O2 a 100%',
+                    'Monitorar SpO2 (alvo 92-98%)',
+                    'Capnografia quantitativa (EtCO2 35-45 mmHg)',
+                    'Considerar gasometria arterial seriada'
+                ]
+            },
+            'Hidrogênio (acidose)': {
+                title: 'Acidose Metabólica',
+                icon: 'fa-flask',
+                actions: [
+                    'Considerar Bicarbonato de Sódio 1 mEq/kg',
+                    'Verificar gasometria arterial (pH, HCO3, lactato)',
+                    'Hiperventilar se acidose respiratória grave',
+                    'Avaliar causa base (sepse, cetoacidose, intoxicação)',
+                    'Repetir gasometria após intervenção'
+                ]
+            },
+            'Hipo/Hipercalemia': {
+                title: 'Distúrbio do Potássio',
+                icon: 'fa-vial',
+                actions: [
+                    'Verificar potássio sérico urgentemente',
+                    'Hipercalemia: Gluconato de Cálcio IV, insulina + glicose, bicarbonato',
+                    'Hipercalemia: Albuterol inalatório, diálise se refratário',
+                    'Hipocalemia: Reposição de potássio IV (10-20 mEq/h)',
+                    'Monitorar ECG para alterações do ritmo'
+                ]
+            },
+            'Hipotermia': {
+                title: 'Hipotermia',
+                icon: 'fa-temperature-low',
+                actions: [
+                    'Medir temperatura central (esofágica, vesical)',
+                    'Iniciar reaquecimento ativo externo (cobertores, calor radiante)',
+                    'Reaquecimento interno: fluidos aquecidos IV, lavagem aquecida',
+                    'ECMO se instabilidade refratária',
+                    'Continuar RCP até normotermia (>35°C)'
+                ]
+            },
+            'Tensão no tórax (Pneumotórax)': {
+                title: 'Pneumotórax Hipertensivo',
+                icon: 'fa-lung',
+                actions: [
+                    'Descompressão com agulha no 2° EIC, linha hemiclavicular',
+                    'Confirmar com drenagem torácica (dreno de tórax)',
+                    'Oxigenioterapia e suporte ventilatório',
+                    'Rx tórax AP para confirmação',
+                    'Reavaliar expansão pulmonar e sinais vitais'
+                ]
+            },
+            'Tamponamento cardíaco': {
+                title: 'Tamponamento Cardíaco',
+                icon: 'fa-heart',
+                actions: [
+                    'Realizar pericardiocentese guiada por ECO',
+                    'Reposição volêmica agressiva',
+                    'Considerar janela pericárdica cirúrgica',
+                    'Monitorar sinais de baixo débito (PAM, lactato)',
+                    'ECG: baixa voltagem, alternância elétrica'
+                ]
+            },
+            'Toxinas': {
+                title: 'Toxinas / Overdose',
+                icon: 'fa-skull',
+                actions: [
+                    'Administrar antídoto específico se disponível',
+                    'Suporte avançado de vida conforme necessário',
+                    'Carvão ativado se ingestão recente (< 1h)',
+                    'Considerar lavagem gástrica se indicado',
+                    'Consultar centro de intoxicação'
+                ]
+            },
+            'Trombose pulmonar': {
+                title: 'TEP (Tromboembolismo Pulmonar)',
+                icon: 'fa-bolt',
+                actions: [
+                    'Suporte hemodinâmico com vasopressores',
+                    'Considerar trombolítico (se IMC > 40 ou instável)',
+                    'Heparina não fracionada ou de baixo peso molecular',
+                    'ECG: S1Q3T3, BCRD, sobrecarga VD',
+                    'AngioTC de tórax se estável para confirmar'
+                ]
+            },
+            'Trombose coronariana': {
+                title: 'IAM (Infarto Agudo do Miocárdio)',
+                icon: 'fa-heart-pulse',
+                actions: [
+                    'ECG de 12 derivações imediato',
+                    'AAS 162-325 mg mastigável',
+                    'Acesso à hemodinâmica para angioplastia primária',
+                    'Se IAMCSST: meta porta-balão < 90 min',
+                    'Trombolítico se sem acesso à hemodinâmica em tempo hábil'
+                ]
+            }
+        };
+
+        const SCENARIO_LABELS = {
+            cardiacArrest: 'Parada Cardíaca',
+            bradycardia: 'Bradiarritmia',
+            tachycardia: 'Taquiarritmia'
+        };
 
         const CircularTimer = ({ label, subLabel, progress, max, colorClass, trailColorClass = "text-slate-700" }) => {
             const radius = 32;
@@ -127,19 +262,87 @@
             );
         };
 
-        const Modal = ({ show, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", danger = false }) => {
+        const Modal = ({ show, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", danger = false, children }) => {
             if (!show) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl">
                         <h3 className="text-lg font-bold text-slate-800 mb-2">{title}</h3>
                         <p className="text-slate-600 text-sm mb-5">{message}</p>
-                        <div className="flex justify-end space-x-3">
-                            <button onClick={onCancel} className="px-4 py-2 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition-colors">
-                                {cancelText}
-                            </button>
-                            <button onClick={onConfirm} className={`px-4 py-2 rounded-xl font-semibold text-sm text-white transition-colors shadow-md ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                                {confirmText}
+                        {children ? children : (
+                            <div className="flex justify-end space-x-3">
+                                <button onClick={onCancel} className="px-4 py-2 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition-colors">
+                                    {cancelText}
+                                </button>
+                                <button onClick={onConfirm} className={`px-4 py-2 rounded-xl font-semibold text-sm text-white transition-colors shadow-md ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                                    {confirmText}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const OutcomeModal = ({ show, scenario, onRCE, onObito, onResolucao, onEvolucaoParada, onCancel }) => {
+            if (!show) return null;
+            const isCardiacArrest = scenario === 'cardiacArrest';
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                        <div className="text-center mb-2">
+                            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i className="fas fa-triangle-exclamation text-2xl text-amber-600"></i>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-800">Finalizar Procedimento</h3>
+                            <p className="text-slate-500 text-sm mt-1">Selecione o desfecho clínico:</p>
+                        </div>
+                        <div className="space-y-3 mt-4">
+                            {isCardiacArrest ? (
+                                <>
+                                    <button onClick={onRCE} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-5 px-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i className="fas fa-heart-pulse text-xl"></i>
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-base">RCE</div>
+                                            <div className="text-xs font-medium text-green-100">Retorno da Circulação Espontânea</div>
+                                        </div>
+                                    </button>
+                                    <button onClick={onObito} className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-5 px-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i className="fas fa-cross text-xl"></i>
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-base">Óbito</div>
+                                            <div className="text-xs font-medium text-red-200">Declaração de óbito</div>
+                                        </div>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={onResolucao} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 px-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i className="fas fa-check text-xl"></i>
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-base">Resolução</div>
+                                            <div className="text-xs font-medium text-emerald-100">Ritmo normalizado / estabilização</div>
+                                        </div>
+                                    </button>
+                                    <button onClick={onEvolucaoParada} className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-5 px-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i className="fas fa-heart-circle-exclamation text-xl"></i>
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-base">Evolução para Parada</div>
+                                            <div className="text-xs font-medium text-red-200">Iniciar algoritmo de Parada Cardíaca</div>
+                                        </div>
+                                    </button>
+                                </>
+                            )}
+                            <button onClick={onCancel} className="w-full py-3 rounded-xl font-semibold text-sm text-slate-500 hover:bg-slate-50 transition-colors">
+                                Cancelar
                             </button>
                         </div>
                     </div>
@@ -150,6 +353,7 @@
         const App = () => {
             const [currentView, setCurrentView] = useState('home');
             const [activeTab, setActiveTab] = useState('procedimento');
+            const [selectedScenario, setSelectedScenario] = useState(null);
             
             const [isRunning, setIsRunning] = useState(false);
             const [startTime, setStartTime] = useState(null);
@@ -161,18 +365,35 @@
             const [diagnosis, setDiagnosis] = useState(null);
             const [causaSuspeita, setCausaSuspeita] = useState(null);
             const [events, setEvents] = useState([]);
+            const [procedureOutcome, setProcedureOutcome] = useState(null);
             
             const [isMuted, setIsMuted] = useState(true);
             const [bpm, setBpm] = useState(BPM_DEFAULT);
             const [modalConfig, setModalConfig] = useState({ show: false });
+            const [outcomeModal, setOutcomeModal] = useState(false);
             const [tickVisual, setTickVisual] = useState(false);
             const [defibrillationCount, setDefibrillationCount] = useState(0);
             const [amiodaroneDoseCount, setAmiodaroneDoseCount] = useState(0);
+            const [lidocaineGiven, setLidocaineGiven] = useState(false);
             const [suggestedAction, setSuggestedAction] = useState(null);
             const [reports, setReports] = useState([]);
             const [viewingReport, setViewingReport] = useState(null);
             const [homeTab, setHomeTab] = useState('rcps');
             const [wakeLockActive, setWakeLockActive] = useState(false);
+
+            // Bradycardia-specific
+            const [atropineGiven, setAtropineGiven] = useState(false);
+            const [pacerPlaced, setPacerPlaced] = useState(false);
+            const [bradyUnstable, setBradyUnstable] = useState(null);
+            const [epinefrinaBicGiven, setEpinefrinaBicGiven] = useState(false);
+            const [dopaminaBicGiven, setDopaminaBicGiven] = useState(false);
+
+            // Tachycardia-specific
+            const [tachyUnstable, setTachyUnstable] = useState(null);
+            const [tachyType, setTachyType] = useState(null);
+            const [adenosineGiven, setAdenosineGiven] = useState(false);
+            const [cardioversionDone, setCardioversionDone] = useState(false);
+            const [vagalManeuverDone, setVagalManeuverDone] = useState(false);
 
             const audioCtxRef = useRef(null);
             const metronomeIntervalRef = useRef(null);
@@ -185,7 +406,9 @@
                     timerRef.current = setInterval(() => {
                         const totalSecs = Math.floor((Date.now() - startTime) / 1000);
                         setElapsedSecs(totalSecs);
-                        setCycleCount(Math.floor(totalSecs / CYCLE_DURATION) + 1);
+                        if (selectedScenario === 'cardiacArrest') {
+                            setCycleCount(Math.floor(totalSecs / CYCLE_DURATION) + 1);
+                        }
                     }, 1000);
 
                     if (!audioCtxRef.current) {
@@ -226,16 +449,16 @@
                     clearInterval(timerRef.current);
                     clearInterval(metronomeIntervalRef.current);
                 };
-            }, [isRunning, startTime, isMuted, bpm]);
+            }, [isRunning, startTime, isMuted, bpm, selectedScenario]);
 
             useEffect(() => {
-                if (isRunning && cycleCount > 1 && cycleCount !== prevCycleRef.current) {
+                if (isRunning && cycleCount > 1 && cycleCount !== prevCycleRef.current && selectedScenario === 'cardiacArrest') {
                     prevCycleRef.current = cycleCount;
                     if (!suggestedAction || suggestedAction === 'reavaliar_ritmo') {
                         setSuggestedAction('reavaliar_ritmo');
                     }
                 }
-            }, [cycleCount, isRunning, suggestedAction]);
+            }, [cycleCount, isRunning, suggestedAction, selectedScenario]);
 
             useEffect(() => {
                 try {
@@ -248,6 +471,9 @@
                         if (data.amiodaroneDoseCount) setAmiodaroneDoseCount(data.amiodaroneDoseCount);
                         if (data.lastAdrenalineTime) setLastAdrenalineTime(data.lastAdrenalineTime);
                         if (data.startTime) setStartTime(data.startTime);
+                        if (data.outcome) setProcedureOutcome(data.outcome);
+                        if (data.selectedScenario) setSelectedScenario(data.selectedScenario);
+                        if (data.causaSuspeita) setCausaSuspeita(data.causaSuspeita);
                         if (data.isRunning && data.startTime) {
                             setIsRunning(true);
                             setElapsedSecs(Math.floor((Date.now() - data.startTime) / 1000));
@@ -275,13 +501,16 @@
                         lastAdrenalineTime,
                         startTime,
                         isRunning,
-                        currentView
+                        currentView,
+                        outcome: procedureOutcome,
+                        selectedScenario,
+                        causaSuspeita
                     };
                     localStorage.setItem(STORAGE_CURRENT, JSON.stringify(data));
                 } catch (e) {
                     console.error('Falha ao salvar dados', e);
                 }
-            }, [events, diagnosis, defibrillationCount, amiodaroneDoseCount, lastAdrenalineTime, startTime, isRunning, currentView]);
+            }, [events, diagnosis, defibrillationCount, amiodaroneDoseCount, lastAdrenalineTime, startTime, isRunning, currentView, procedureOutcome, selectedScenario, causaSuspeita]);
 
             const cycleSeconds = elapsedSecs % CYCLE_DURATION;
             const adrenalineSeconds = lastAdrenalineTime 
@@ -304,23 +533,41 @@
                 }, ...prev]);
             };
 
-            const handleStartProcedure = () => {
+            const fullResetState = () => {
+                setEvents([]);
+                setDiagnosis(null);
+                setCausaSuspeita(null);
+                setDefibrillationCount(0);
+                setAmiodaroneDoseCount(0);
+                setLidocaineGiven(false);
+                setLastAdrenalineTime(null);
+                setSuggestedAction(null);
+                setAtropineGiven(false);
+                setPacerPlaced(false);
+                setBradyUnstable(null);
+                setTachyUnstable(null);
+                setTachyType(null);
+                setAdenosineGiven(false);
+                setCardioversionDone(false);
+                setEpinefrinaBicGiven(false);
+                setDopaminaBicGiven(false);
+                setVagalManeuverDone(false);
+                setProcedureOutcome(null);
+                setElapsedSecs(0);
+                setCycleCount(1);
+            };
+
+            const handleStartProcedure = (scenario) => {
+                fullResetState();
+                setSelectedScenario(scenario);
                 const now = Date.now();
                 setStartTime(now);
                 setIsRunning(true);
                 setCurrentView('procedure');
-                setEvents([]);
-                setDiagnosis(null);
-                setCausaSuspeita(null);
-                setElapsedSecs(0);
-                setCycleCount(1);
-                setDefibrillationCount(0);
-                setAmiodaroneDoseCount(0);
-                setSuggestedAction(null);
                 
                 localStorage.removeItem(STORAGE_CURRENT);
                 
-                logEvent('system', 'Procedimento iniciado', `Em ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`, 0);
+                logEvent('system', 'Procedimento iniciado', `${SCENARIO_LABELS[scenario]} — ${new Date().toLocaleDateString('pt-BR')} ${getCurrentTimeStr()}`, 0);
                 
                 requestWakeLock();
                 
@@ -335,14 +582,16 @@
                 
                 if (category === 'diagnosis') {
                     setDiagnosis(item);
-                    if (item === 'FV / TVSP') {
-                        setSuggestedAction('desfribilacao');
-                    } else {
-                        const now = Date.now();
-                        if (!lastAdrenalineTime || now - lastAdrenalineTime > 240000) {
-                            setSuggestedAction('adrenalina');
+                    if (selectedScenario === 'cardiacArrest') {
+                        if (item === 'FV / TVSP') {
+                            setSuggestedAction('desfribilacao');
                         } else {
-                            setSuggestedAction(null);
+                            const now = Date.now();
+                            if (!lastAdrenalineTime || now - lastAdrenalineTime > 240000) {
+                                setSuggestedAction('adrenalina');
+                            } else {
+                                setSuggestedAction(null);
+                            }
                         }
                     }
                 } else if (item === 'Desfibrilação') {
@@ -364,6 +613,23 @@
                 } else if (item === 'Amiodarona') {
                     setAmiodaroneDoseCount(prev => Math.min(prev + 1, 2));
                     setSuggestedAction(null);
+                } else if (item === 'Lidocaína') {
+                    setLidocaineGiven(true);
+                    setSuggestedAction(null);
+                } else if (item === 'Atropina') {
+                    setAtropineGiven(true);
+                } else if (item === 'Marca-passo transcutâneo') {
+                    setPacerPlaced(true);
+                } else if (item === 'Adenosina') {
+                    setAdenosineGiven(true);
+                } else if (item === 'Cardioversão sincronizada') {
+                    setCardioversionDone(true);
+                } else if (item === 'Epinefrina BIC') {
+                    setEpinefrinaBicGiven(true);
+                } else if (item === 'Dopamina BIC') {
+                    setDopaminaBicGiven(true);
+                } else if (item === 'Manobras vagais') {
+                    setVagalManeuverDone(true);
                 }
             };
 
@@ -383,21 +649,53 @@
             };
 
             const requestFinish = () => {
-                setModalConfig({
-                    show: true,
-                    title: 'Finalizar RCP',
-                    message: 'Deseja realmente finalizar as compressões e seguir para os cuidados pós-RCP?',
-                    confirmText: 'Finalizar',
-                    danger: true,
-                    onConfirm: () => {
-                        setIsRunning(false);
-                        releaseWakeLock();
-                        logEvent('system', 'Procedimento finalizado', `Duração total: ${formatTime(elapsedSecs)}`);
-                        setCurrentView('postCare');
-                        setModalConfig({ show: false });
-                    },
-                    onCancel: () => setModalConfig({ show: false })
-                });
+                setOutcomeModal(true);
+            };
+
+            const handleOutcomeRCE = () => {
+                setProcedureOutcome('rce');
+                setOutcomeModal(false);
+                setIsRunning(false);
+                releaseWakeLock();
+                logEvent('system', 'Procedimento finalizado', `Desfecho: RCE — Duração total: ${formatTime(elapsedSecs)}`);
+                setCurrentView('postCare');
+            };
+
+            const handleOutcomeObito = () => {
+                setOutcomeModal(false);
+                setIsRunning(false);
+                releaseWakeLock();
+                logEvent('system', 'Procedimento finalizado', `Desfecho: Óbito — Duração total: ${formatTime(elapsedSecs)}`);
+                setProcedureOutcome('obito');
+                handleSaveComplete('obito', selectedScenario, causaSuspeita);
+            };
+
+            const handleOutcomeResolucao = () => {
+                setOutcomeModal(false);
+                setIsRunning(false);
+                releaseWakeLock();
+                logEvent('system', 'Procedimento finalizado', `Desfecho: Resolução — Duração total: ${formatTime(elapsedSecs)}`);
+                setProcedureOutcome('resolucao');
+                handleSaveComplete('resolucao', selectedScenario, causaSuspeita);
+            };
+
+            const handleOutcomeEvolucaoParada = () => {
+                setOutcomeModal(false);
+                logEvent('system', 'Paciente evoluiu para Parada Cardíaca', `Evolução em ${formatTime(elapsedSecs)} de procedimento`);
+                setProcedureOutcome('evolucao_parada');
+                setSelectedScenario('cardiacArrest');
+                setDiagnosis(null);
+                setDefibrillationCount(0);
+                setAmiodaroneDoseCount(0);
+                setLidocaineGiven(false);
+                setLastAdrenalineTime(null);
+                setSuggestedAction(null);
+                setElapsedSecs(0);
+                setCycleCount(1);
+                setStartTime(Date.now());
+                setEpinefrinaBicGiven(false);
+                setDopaminaBicGiven(false);
+                setVagalManeuverDone(false);
             };
 
             const generateReportText = (srcEvents, srcDate) => {
@@ -428,7 +726,9 @@
                 const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
                 let text = `=== RELATÓRIO ACLS ===\n`;
                 text += `Data: ${dateStr}\n`;
-                const startEv = events.filter(e => e.type === 'system');
+                text += `Cenário: ${SCENARIO_LABELS[selectedScenario] || '—'}\n`;
+                text += `Desfecho: ${procedureOutcome === 'rce' ? 'RCE (Retorno da Circulação Espontânea)' : procedureOutcome === 'obito' ? 'Óbito' : procedureOutcome === 'resolucao' ? 'Resolução (ritmo normalizado)' : procedureOutcome === 'evolucao_parada' ? 'Evoluiu para Parada Cardíaca' : '—'}\n`;
+                const startEv = items.filter(e => e.type === 'system');
                 if (startEv.length) text += `Início: ${startEv[startEv.length-1].description}\n`;
                 text += `\n`;
                 cycles.forEach(row => {
@@ -521,7 +821,7 @@
                 return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
             }, [isRunning]);
 
-            const handleSaveComplete = () => {
+            const handleSaveComplete = (outcomeOverride, scenarioOverride, causaOverride) => {
                 const report = {
                     id: Date.now(),
                     date: new Date().toISOString(),
@@ -530,7 +830,10 @@
                     totalTime: elapsedSecs,
                     cycleCount,
                     defibrillationCount,
-                    amiodaroneDoseCount
+                    amiodaroneDoseCount,
+                    scenario: scenarioOverride || selectedScenario,
+                    outcome: outcomeOverride || procedureOutcome,
+                    causaSuspeita: causaOverride || causaSuspeita
                 };
                 const updated = [report, ...reports];
                 setReports(updated);
@@ -540,14 +843,10 @@
                 localStorage.removeItem(STORAGE_CURRENT);
                 releaseWakeLock();
                 setCurrentView('home');
-                setEvents([]);
-                setDiagnosis(null);
-                setDefibrillationCount(0);
-                setAmiodaroneDoseCount(0);
-                setLastAdrenalineTime(null);
-                setCausaSuspeita(null);
+                fullResetState();
             };
 
+            // ── HOME SCREEN ──
             const renderHome = () => (
                 <div className="flex flex-col h-dynamic bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
                     <header className="bg-slate-800 text-white p-5 flex items-center justify-center shadow-lg z-10">
@@ -555,7 +854,7 @@
                     </header>
                     
                     <div className="flex bg-white shadow-sm z-0">
-                        <button onClick={() => setHomeTab('rcps')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'rcps' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600'}`}>RCPs</button>
+                        <button onClick={() => setHomeTab('rcps')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'rcps' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600'}`}>Registros</button>
                         <button onClick={() => setHomeTab('estatisticas')} className={`flex-1 py-4 font-bold transition-colors ${homeTab === 'estatisticas' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600'}`}>Estatísticas</button>
                     </div>
                     
@@ -567,7 +866,7 @@
                                     <i className="fas fa-file-medical-alt text-5xl"></i>
                                 </div>
                                 <h2 className="text-xl font-bold text-slate-700 mb-2">Nenhum Registro</h2>
-                                <p className="text-slate-500 text-sm">Não existem procedimentos de RCP realizados recentemente.</p>
+                                <p className="text-slate-500 text-sm">Realize um procedimento para gerar o relatório.</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-slate-100">
@@ -576,17 +875,22 @@
                                     const dateStr = d.toLocaleDateString('pt-BR');
                                     const timeStr = d.toTimeString().slice(0,5);
                                     const duration = rep.totalTime ? formatTime(rep.totalTime) : '—';
-                                    const rhythm = rep.diagnosis || 'Não diagnosticado';
+                                    const rhythm = rep.diagnosis || '—';
+                                    const scenarioLabel = SCENARIO_LABELS[rep.scenario] || '—';
+                                    const outcomeLabel = rep.outcome === 'rce' ? 'RCE' : rep.outcome === 'obito' ? 'Óbito' : rep.outcome === 'resolucao' ? 'Resolução' : rep.outcome === 'evolucao_parada' ? '→ Parada' : '—';
+                                    const outcomeColor = rep.outcome === 'rce' ? 'text-green-600' : rep.outcome === 'obito' ? 'text-red-600' : rep.outcome === 'resolucao' ? 'text-emerald-600' : rep.outcome === 'evolucao_parada' ? 'text-amber-600' : 'text-slate-400';
                                     return (
                                     <div key={rep.id} className="flex items-stretch">
                                         <button onClick={() => setViewingReport(rep)} className="flex-1 flex items-center p-4 bg-white hover:bg-slate-50 transition-colors text-left">
-                                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
-                                                <i className="fas fa-file-medical-alt text-sm"></i>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${rep.outcome === 'rce' ? 'bg-green-100 text-green-600' : rep.outcome === 'obito' ? 'bg-red-100 text-red-600' : rep.outcome === 'resolucao' ? 'bg-emerald-100 text-emerald-600' : rep.outcome === 'evolucao_parada' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                <i className={`fas ${rep.outcome === 'rce' ? 'fa-heart-pulse' : rep.outcome === 'obito' ? 'fa-cross' : rep.outcome === 'resolucao' ? 'fa-check' : rep.outcome === 'evolucao_parada' ? 'fa-heart-circle-exclamation' : 'fa-file-medical-alt'} text-sm`}></i>
                                             </div>
-                                            <div className="ml-3 flex-1">
-                                                <h3 className="text-sm font-bold text-slate-800">RCP {dateStr} às {timeStr}</h3>
-                                                <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                                                    {duration} &middot; {rhythm}
+                                            <div className="ml-3 flex-1 min-w-0">
+                                                <h3 className="text-sm font-bold text-slate-800 truncate">{scenarioLabel} — {dateStr} às {timeStr}</h3>
+                                                <p className="text-xs text-slate-500 mt-0.5 font-medium flex flex-wrap gap-x-2">
+                                                    <span>{duration}</span>
+                                                    <span className={`font-bold ${outcomeColor}`}>{outcomeLabel}</span>
+                                                    <span>{rhythm}</span>
                                                 </p>
                                             </div>
                                         </button>
@@ -595,7 +899,7 @@
                                                 setModalConfig({
                                                     show: true,
                                                     title: 'Apagar Relatório',
-                                                    message: `Deseja apagar o relatório de RCP de ${dateStr} às ${timeStr}?`,
+                                                    message: `Deseja apagar o relatório de ${dateStr} às ${timeStr}?`,
                                                     confirmText: 'Apagar',
                                                     cancelText: 'Cancelar',
                                                     danger: true,
@@ -628,20 +932,25 @@
                                     <i className="fas fa-chart-bar text-5xl"></i>
                                 </div>
                                 <h2 className="text-xl font-bold text-slate-700 mb-2">Nenhuma Estatística</h2>
-                                <p className="text-slate-500 text-sm">Complete e salve um relatório de RCP para ver estatísticas.</p>
+                                <p className="text-slate-500 text-sm">Complete e salve um relatório para ver estatísticas.</p>
                             </div>
                         ) : (() => {
                             const total = reports.length;
                             const rhythmCount = {};
+                            const scenarioCount = {};
+                            let rceCount = 0, obitoCount = 0, resolucaoCount = 0, evolucaoCount = 0;
                             let totalShocks = 0;
                             let totalAmio = 0;
                             let totalAdr = 0;
                             let totalDuration = 0;
                             reports.forEach(rep => {
                                 totalDuration += rep.totalTime || 0;
-                                if (rep.diagnosis) {
-                                    rhythmCount[rep.diagnosis] = (rhythmCount[rep.diagnosis] || 0) + 1;
-                                }
+                                if (rep.diagnosis) rhythmCount[rep.diagnosis] = (rhythmCount[rep.diagnosis] || 0) + 1;
+                                if (rep.scenario) scenarioCount[rep.scenario] = (scenarioCount[rep.scenario] || 0) + 1;
+                                if (rep.outcome === 'rce') rceCount++;
+                                if (rep.outcome === 'obito') obitoCount++;
+                                if (rep.outcome === 'resolucao') resolucaoCount++;
+                                if (rep.outcome === 'evolucao_parada') evolucaoCount++;
                                 totalShocks += rep.defibrillationCount || 0;
                                 totalAmio += rep.amiodaroneDoseCount || 0;
                                 (rep.events || []).forEach(ev => {
@@ -654,41 +963,47 @@
                             <div className="space-y-3">
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
                                     <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Resumo Geral</h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-blue-50 rounded-xl p-3 text-center">
-                                            <span className="text-2xl font-black text-blue-600">{total}</span>
-                                            <p className="text-[10px] text-blue-500 font-semibold mt-0.5">Total RCPs</p>
-                                        </div>
-                                        <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                                            <span className="text-2xl font-black text-emerald-600">{avgDuration}</span>
-                                            <p className="text-[10px] text-emerald-500 font-semibold mt-0.5">Duração Média</p>
-                                        </div>
-                                        <div className="bg-amber-50 rounded-xl p-3 text-center">
-                                            <span className="text-2xl font-black text-amber-600">{totalShocks}</span>
-                                            <p className="text-[10px] text-amber-500 font-semibold mt-0.5">Total Choques</p>
-                                        </div>
-                                        <div className="bg-purple-50 rounded-xl p-3 text-center">
-                                            <span className="text-2xl font-black text-purple-600">{totalAmio}</span>
-                                            <p className="text-[10px] text-purple-500 font-semibold mt-0.5">Doses Amiodarona</p>
-                                        </div>
-                                        <div className="bg-rose-50 rounded-xl p-3 text-center">
-                                            <span className="text-2xl font-black text-rose-600">{totalAdr}</span>
-                                            <p className="text-[10px] text-rose-500 font-semibold mt-0.5">Doses Adrenalina</p>
-                                        </div>
-                                    </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                                                    <span className="text-2xl font-black text-blue-600">{total}</span>
+                                                    <p className="text-[10px] text-blue-500 font-semibold mt-0.5">Total</p>
+                                                </div>
+                                                <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                                                    <span className="text-2xl font-black text-emerald-600">{avgDuration}</span>
+                                                    <p className="text-[10px] text-emerald-500 font-semibold mt-0.5">Duração Média</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-2 mt-2">
+                                                <div className="bg-green-50 rounded-xl p-2 text-center">
+                                                    <span className="text-lg font-black text-green-600">{rceCount}</span>
+                                                    <p className="text-[8px] text-green-500 font-semibold mt-0.5">RCE</p>
+                                                </div>
+                                                <div className="bg-red-50 rounded-xl p-2 text-center">
+                                                    <span className="text-lg font-black text-red-600">{obitoCount}</span>
+                                                    <p className="text-[8px] text-red-500 font-semibold mt-0.5">Óbito</p>
+                                                </div>
+                                                <div className="bg-emerald-50 rounded-xl p-2 text-center">
+                                                    <span className="text-lg font-black text-emerald-600">{resolucaoCount}</span>
+                                                    <p className="text-[8px] text-emerald-500 font-semibold mt-0.5">Resolução</p>
+                                                </div>
+                                                <div className="bg-amber-50 rounded-xl p-2 text-center">
+                                                    <span className="text-lg font-black text-amber-600">{evolucaoCount}</span>
+                                                    <p className="text-[8px] text-amber-500 font-semibold mt-0.5">→ Parada</p>
+                                                </div>
+                                            </div>
                                 </div>
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Ritmos Mais Frequentes</h3>
-                                    {Object.entries(rhythmCount).length === 0 ? (
-                                        <p className="text-xs text-slate-400">Nenhum ritmo registrado.</p>
+                                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Cenários</h3>
+                                    {Object.keys(scenarioCount).length === 0 ? (
+                                        <p className="text-xs text-slate-400">Nenhum cenário registrado.</p>
                                     ) : (
                                         <div className="space-y-2">
-                                            {Object.entries(rhythmCount).sort((a, b) => b[1] - a[1]).map(([rhythm, count]) => {
+                                            {Object.entries(scenarioCount).sort((a, b) => b[1] - a[1]).map(([scenario, count]) => {
                                                 const pct = Math.round((count / total) * 100);
                                                 return (
-                                                <div key={rhythm}>
+                                                <div key={scenario}>
                                                     <div className="flex justify-between text-xs mb-0.5">
-                                                        <span className="font-semibold text-slate-700">{rhythm}</span>
+                                                        <span className="font-semibold text-slate-700">{SCENARIO_LABELS[scenario] || scenario}</span>
                                                         <span className="text-slate-400">{count} ({pct}%)</span>
                                                     </div>
                                                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -712,52 +1027,70 @@
                             Relatórios salvos automaticamente no cache do navegador. O cache é um armazenamento temporário — os dados podem ser perdidos se você limpar o cache ou usar outro dispositivo/navegador.
                         </div>
                     </div>
-                    <div className="p-6 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-                        <button 
-                            onClick={handleStartProcedure} 
-                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] transition-all active:scale-95 text-lg flex items-center justify-center gap-3"
-                        >
-                            <i className="fas fa-play"></i> Iniciar RCP
+
+                    <div className="p-4 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] grid grid-cols-3 gap-2">
+                        <button onClick={() => handleStartProcedure('cardiacArrest')} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] transition-all active:scale-95 text-sm flex flex-col items-center justify-center gap-1">
+                            <i className="fas fa-heart-circle-exclamation text-xl"></i>
+                            <span>Parada Cardíaca</span>
+                        </button>
+                        <button onClick={() => handleStartProcedure('bradycardia')} className="bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(234,88,12,0.39)] transition-all active:scale-95 text-sm flex flex-col items-center justify-center gap-1">
+                            <i className="fas fa-heart-pulse text-xl"></i>
+                            <span>Bradiarritmia</span>
+                        </button>
+                        <button onClick={() => handleStartProcedure('tachycardia')} className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 rounded-2xl shadow-[0_4px_14px_0_rgba(225,29,72,0.39)] transition-all active:scale-95 text-sm flex flex-col items-center justify-center gap-1">
+                            <i className="fas fa-bolt text-xl"></i>
+                            <span>Taquiarritmia</span>
                         </button>
                     </div>
                 </div>
             );
 
-            const renderProcedure = () => (
-                <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative">
-                    
-                    {/* Topo: Temporizadores + Diagnóstico */}
+            // ── TOP BAR ──
+            const renderTopBar = () => (
+                <>
                     <div className="flex items-center px-4 pt-3 pb-2 bg-slate-900 gap-3">
-                        <CircularTimer 
-                            label={formatTime(cycleSeconds)} 
-                            subLabel={`Ciclo ${cycleCount}`} 
-                            progress={cycleSeconds} 
-                            max={CYCLE_DURATION} 
-                            colorClass={cycleSeconds > 100 ? "text-orange-400" : "text-emerald-400"} 
-                        />
-                        
-                        <div className="flex-1 text-center">
-                            <div className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">Diagnóstico</div>
-                            <div className={`text-sm font-bold py-1.5 px-2 rounded-lg border leading-tight ${diagnosis ? 'text-white bg-slate-800 border-slate-600' : 'text-slate-400 bg-slate-800 border-slate-700'}`}>
-                                {diagnosis || "Analisando..."}
-                            </div>
-                        </div>
-                        
-                        <CircularTimer 
-                            label={formatTime(adrenalineSeconds)} 
-                            subLabel="Adrenalina" 
-                            progress={adrenalineSeconds % ADRENALINE_DURATION} 
-                            max={ADRENALINE_DURATION} 
-                            colorClass={adrenalineSeconds > 180 ? "text-red-400" : "text-blue-400"} 
-                        />
+                        {selectedScenario === 'cardiacArrest' ? (
+                            <>
+                                <CircularTimer 
+                                    label={formatTime(cycleSeconds)} 
+                                    subLabel={`Ciclo ${cycleCount}`} 
+                                    progress={cycleSeconds} 
+                                    max={CYCLE_DURATION} 
+                                    colorClass={cycleSeconds > 100 ? "text-orange-400" : "text-emerald-400"} 
+                                />
+                                <div className="flex-1 text-center">
+                                    <div className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">Diagnóstico</div>
+                                    <div className={`text-sm font-bold py-1.5 px-2 rounded-lg border leading-tight ${diagnosis ? 'text-white bg-slate-800 border-slate-600' : 'text-slate-400 bg-slate-800 border-slate-700'}`}>
+                                        {diagnosis || "Analisando..."}
+                                    </div>
+                                </div>
+                                <CircularTimer 
+                                    label={formatTime(adrenalineSeconds)} 
+                                    subLabel="Adrenalina" 
+                                    progress={adrenalineSeconds % ADRENALINE_DURATION} 
+                                    max={ADRENALINE_DURATION} 
+                                    colorClass={adrenalineSeconds > 180 ? "text-red-400" : "text-blue-400"} 
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex-1 text-center">
+                                    <div className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">{SCENARIO_LABELS[selectedScenario]}</div>
+                                    <div className="text-lg font-bold text-white">
+                                        {formatTime(elapsedSecs)}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
-                    
-                    {/* Tempo Total */}
+
                     <div className="bg-slate-950 text-center py-1 border-y border-slate-800">
-                        <span className="font-mono text-lg text-slate-300 font-light tracking-widest timer-text">{formatTime(elapsedSecs)}</span>
+                        <span className="font-mono text-lg text-slate-300 font-light tracking-widest timer-text">
+                            {formatTime(elapsedSecs)}
+                            {selectedScenario === 'cardiacArrest' && <span className="text-xs text-slate-500 ml-2">Ciclo {cycleCount}</span>}
+                        </span>
                     </div>
-                    
-                    {/* Barra de Controles: Mudo | BPM | Finalizar */}
+
                     <div className="flex bg-slate-800 items-stretch">
                         <button onClick={handleToggleMute} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-r border-slate-700 transition-colors ${isMuted ? 'text-slate-500 bg-slate-800' : 'text-blue-400 bg-slate-700'}`}>
                             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
@@ -777,207 +1110,786 @@
                             <i className={`fas fa-moon text-xs ${wakeLockActive ? 'text-emerald-400' : 'text-slate-600'}`}></i>
                         </div>
                         <button onClick={requestFinish} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
-                            <i className="fas fa-stop-circle"></i> Finalizar RCP
+                            <i className="fas fa-stop-circle"></i> Finalizar
                         </button>
                     </div>
-                    
-                    {/* Área de Conteúdo Principal */}
-                    <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col relative">
-                        {activeTab === 'procedimento' && (
-                            <div className="p-2 flex flex-col flex-1 gap-1 animate-fade-in min-h-0">
-                                {!diagnosis && (
-                                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-1.5 rounded-lg text-xs font-medium text-center shrink-0">
-                                        <i className="fas fa-exclamation-triangle mr-1"></i>
-                                        Selecione o ritmo cardíaco
-                                    </div>
-                                )}
-                                
-                                <div className="flex-1 flex flex-col min-h-0">
-                                    <h3 className="text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                                        {suggestedAction === 'reavaliar_ritmo' ? (
-                                            <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
-                                        ) : (
-                                            <span className="text-slate-400">Ritmo Cardíaco</span>
-                                        )}
-                                    </h3>
-                                    <div className="flex-1 grid grid-cols-3 gap-1 min-h-0">
-                                        {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => (
+                </>
+            );
+
+            // ── CARDIAC ARREST PROCEDURE ──
+            const renderCardiacArrestProcedure = () => (
+                <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col relative">
+                    {activeTab === 'procedimento' && (
+                        <div className="p-2 flex flex-col flex-1 gap-1 animate-fade-in min-h-0 overflow-y-auto hide-scrollbar">
+                            {!diagnosis && (
+                                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-1.5 rounded-lg text-xs font-medium text-center shrink-0">
+                                    <i className="fas fa-exclamation-triangle mr-1"></i>
+                                    Selecione o ritmo cardíaco
+                                </div>
+                            )}
+                            
+                            {/* Rhythm Selection */}
+                            <div className="flex flex-col min-h-0">
+                                <h3 className="text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                                    {suggestedAction === 'reavaliar_ritmo' ? (
+                                        <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
+                                    ) : (
+                                        <span className="text-slate-400">Ritmo Cardíaco</span>
+                                    )}
+                                </h3>
+                                <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+                                    {['FV / TVSP', 'AESP', 'Assistolia'].map(diag => {
+                                        const isVF = diag === 'FV / TVSP';
+                                        const isSelected = diagnosis === diag;
+                                        return (
                                             <button 
                                                 key={diag}
                                                 onClick={() => handleAction('diagnosis', diag)}
-                                                className={`h-full w-full rounded-lg font-bold text-sm transition-all active:scale-95 border ${diagnosis === diag ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-sm' : suggestedAction === 'reavaliar_ritmo' ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
+                                                className={`rounded-xl font-bold text-sm transition-all active:scale-95 border-2 p-4 flex flex-col items-center gap-2 ${
+                                                    isSelected 
+                                                        ? isVF 
+                                                            ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-1 shadow-lg' 
+                                                            : 'bg-slate-700 text-white border-slate-600 ring-2 ring-slate-400 ring-offset-1 shadow-lg'
+                                                        : suggestedAction === 'reavaliar_ritmo' 
+                                                            ? 'animate-blink bg-amber-50 border-amber-400 text-amber-700 ring-2 ring-amber-300' 
+                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                                                }`}
                                             >
-                                                <span className="block leading-tight">{diag}</span>
+                                                <i className={`fas ${isVF ? 'fa-bolt' : 'fa-heart-crack'} text-lg ${isSelected ? 'text-white' : isVF ? 'text-red-400' : 'text-slate-400'}`}></i>
+                                                <span className="block leading-tight text-center">{diag}</span>
                                             </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {diagnosis && (
+                                <>
+                                    {/* VF / pVT Branch */}
+                                    {diagnosis === 'FV / TVSP' ? (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 mb-1">
+                                            <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                                <i className="fas fa-bolt"></i> Ramo FV / TVSP
+                                            </div>
+                                            
+                                            {/* Shock Box */}
+                                            <div className="bg-white border-2 border-blue-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-bolt text-red-600 text-lg"></i>
+                                                    <span className="text-red-600 font-bold text-sm">CHOQUE</span>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <button 
+                                                        onClick={() => handleAction('intervention', 'Desfibrilação')}
+                                                        className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                            suggestedAction === 'desfribilacao' 
+                                                                ? 'animate-pulse-urgent bg-red-500 border-red-400 text-white' 
+                                                                : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                                                        }`}
+                                                    >
+                                                        {suggestedAction === 'desfribilacao' ? '▶ DESFIBRILAR AGORA' : `Desfibrilação (${defibrillationCount})`}
+                                                    </button>
+                                                </div>
+                                                {defibrillationCount > 0 && (
+                                                    <p className="text-[10px] text-blue-600 font-medium mt-1">
+                                                        Bifásico: 120-200J | Monofásico: 360J
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* RCP Box */}
+                                            <div className="bg-blue-100 border border-blue-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-hand-fist text-blue-700"></i>
+                                                    <span className="font-bold text-blue-800 text-sm">RCP 2 min</span>
+                                                </div>
+                                                <p className="text-[11px] text-blue-700 font-medium">
+                                                    Compressões 100-120/min · 5-6cm · Revezar operador a cada 2 min
+                                                </p>
+                                            </div>
+
+                                            {/* Drugs */}
+                                            <div className="flex flex-col gap-1">
+                                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Medicações</div>
+                                                <div className="grid grid-cols-2 gap-1">
+                                                    <button 
+                                                        onClick={() => handleAction('therapy', 'Adrenalina')}
+                                                        className={`rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 ${
+                                                            suggestedAction === 'adrenalina' 
+                                                                ? 'animate-pulse-urgent bg-blue-500 border-blue-400 text-white ring-2 ring-blue-300' 
+                                                                : 'bg-blue-100 border-blue-400 text-blue-800 hover:bg-blue-200'
+                                                        }`}
+                                                    >
+                                                        <span className="text-red-600 font-bold">Adrenalina</span>
+                                                        <span className="block text-[9px] font-medium">1mg IV/IO a cada 3-5 min</span>
+                                                    </button>
+                                                    {amiodaroneDoseCount < 2 && (
+                                                        <button 
+                                                            onClick={() => handleAction('therapy', 'Amiodarona')}
+                                                            className={`rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 ${
+                                                                suggestedAction === 'amiodarona' 
+                                                                    ? 'animate-pulse-urgent bg-purple-500 border-purple-400 text-white ring-2 ring-purple-300' 
+                                                                    : 'bg-purple-100 border-purple-400 text-purple-800 hover:bg-purple-200'
+                                                            }`}
+                                                        >
+                                                            Amiodarona
+                                                            <span className="block text-[9px] font-medium">{amiodaroneDoseCount === 0 ? '300mg' : '150mg'} IV/IO</span>
+                                                        </button>
+                                                    )}
+                                                    {amiodaroneDoseCount >= 2 && !lidocaineGiven && (
+                                                        <button 
+                                                            onClick={() => handleAction('therapy', 'Lidocaína')}
+                                                            className="rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 bg-orange-100 border-orange-400 text-orange-800 hover:bg-orange-200"
+                                                        >
+                                                            Lidocaína
+                                                            <span className="block text-[9px] font-medium">1-1.5mg/kg IV/IO</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* Asystole / PEA Branch */
+                                        <div className="bg-slate-200 border border-slate-300 rounded-xl p-2 mb-1">
+                                            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                                <i className="fas fa-heart-crack"></i> Ramo Assistolia / AESP
+                                            </div>
+
+                                            {/* RCP Box */}
+                                            <div className="bg-blue-100 border border-blue-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-hand-fist text-blue-700"></i>
+                                                    <span className="font-bold text-blue-800 text-sm">RCP 2 min</span>
+                                                </div>
+                                                <p className="text-[11px] text-blue-700 font-medium">
+                                                    Compressões 100-120/min · 5-6cm · Revezar operador a cada 2 min
+                                                </p>
+                                            </div>
+
+                                            {/* Adrenaline immediate */}
+                                            <div className="bg-white border-2 border-red-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-syringe text-red-600 text-lg"></i>
+                                                    <span className="text-red-600 font-bold text-sm">ADRENALINA IMEDIATA</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-600 font-medium mb-1.5">Pulso presente? Sem choque indicado.</p>
+                                                <button 
+                                                    onClick={() => handleAction('therapy', 'Adrenalina')}
+                                                    className={`w-full py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                        suggestedAction === 'adrenalina' 
+                                                            ? 'animate-pulse-urgent bg-red-500 border-red-400 text-white' 
+                                                            : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                                                    }`}
+                                                >
+                                                    Administrar Adrenalina 1mg IV/IO
+                                                </button>
+                                            </div>
+
+                                            {/* IOT / Airway */}
+                                            <div className="bg-green-100 border border-green-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-lungs text-green-700"></i>
+                                                    <span className="font-bold text-green-800 text-sm">Via Aérea Avançada</span>
+                                                </div>
+                                                <p className="text-[10px] text-green-700 font-medium mb-1">IOT ou máscara laríngea</p>
+                                                <button 
+                                                    onClick={() => handleAction('intervention', 'IOT')}
+                                                    className="w-full py-2 rounded-lg font-bold text-xs border-2 bg-green-50 border-green-300 text-green-700 hover:bg-green-100 transition-all active:scale-95"
+                                                >
+                                                    IOT / Via Aérea
+                                                </button>
+                                            </div>
+
+                                            {/* Access + Reversible Causes */}
+                                            <div className="grid grid-cols-2 gap-1">
+                                                <div className="bg-white border border-slate-300 rounded-xl p-2.5">
+                                                    <span className="font-bold text-slate-700 text-xs">Acesso IV/IO</span>
+                                                    <p className="text-[9px] text-slate-500">Priorizar acesso proximal</p>
+                                                </div>
+                                                <div className="bg-white border border-slate-300 rounded-xl p-2.5">
+                                                    <span className="font-bold text-slate-700 text-xs">Causas Reversíveis</span>
+                                                    <p className="text-[9px] text-slate-500">Ver aba Causas (H's e T's)</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Additional drugs */}
+                                            <div className="flex flex-col gap-1 mt-1">
+                                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Outras Medicações</div>
+                                                <div className="grid grid-cols-3 gap-1">
+                                                    {['Bic. Sódio', 'Cálcio', 'Magnésio'].map(item => (
+                                                        <button 
+                                                            key={item}
+                                                            onClick={() => handleAction('therapy', item)}
+                                                            className="rounded-lg font-semibold text-xs border bg-white border-slate-200 text-slate-600 p-2 hover:bg-slate-50 transition-all active:scale-95"
+                                                        >
+                                                            {item}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Common Interventions for Cardiac Arrest */}
+                                    <div className="grid grid-cols-3 gap-1">
+                                        <button 
+                                            onClick={() => handleAction('intervention', 'IOT')}
+                                            className="rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                                        >
+                                            <i className="fas fa-lungs text-slate-500 block mb-0.5"></i>
+                                            IOT
+                                        </button>
+                                        <button 
+                                            onClick={() => handleAction('intervention', 'Trombolítico')}
+                                            className="rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                                        >
+                                            <i className="fas fa-droplet text-slate-500 block mb-0.5"></i>
+                                            Trombolítico
+                                        </button>
+                                        <button 
+                                            onClick={() => { setActiveTab('causa'); }}
+                                            className="rounded-lg font-bold text-xs border-2 p-2.5 transition-all active:scale-95 bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                                        >
+                                            <i className="fas fa-search text-amber-500 block mb-0.5"></i>
+                                            H's e T's
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'relatorio' && renderReportBody()}
+                    {activeTab === 'causa' && renderCausaBody()}
+                </div>
+            );
+
+            // ── BRADYCARDIA PROCEDURE ──
+            const renderBradycardiaProcedure = () => (
+                <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col relative">
+                    {activeTab === 'procedimento' && (
+                        <div className="p-2 flex flex-col flex-1 gap-1.5 animate-fade-in min-h-0 overflow-y-auto hide-scrollbar">
+                            {/* Initial Assessment - Orange */}
+                            <div className="bg-orange-100 border-2 border-orange-400 rounded-xl p-3 shadow-sm">
+                                <h3 className="font-bold text-orange-900 text-sm flex items-center gap-2 mb-1">
+                                    <i className="fas fa-clipboard-list"></i>
+                                    Avaliação Inicial
+                                </h3>
+                                <p className="text-[11px] text-orange-800 font-medium">
+                                    FC &lt; 50 bpm · Avaliar sinais e sintomas de instabilidade
+                                </p>
+                            </div>
+
+                            {/* Decision: Unstable? - Rose/Diamond */}
+                            <div className="bg-rose-100 border-2 border-rose-500 rounded-xl p-3 shadow-sm text-center">
+                                <div className="text-[10px] font-bold text-rose-700 uppercase tracking-wider mb-1">Decisão</div>
+                                <p className="font-bold text-rose-900 text-sm">Paciente instável?</p>
+                                <p className="text-[10px] text-rose-700 mb-2">Hipotensão, sinais de choque, alteração do nível de consciência, dor torácica</p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setBradyUnstable(true)}
+                                        className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                            bradyUnstable === true 
+                                                ? 'bg-rose-500 border-rose-400 text-white ring-2 ring-rose-300' 
+                                                : 'bg-white border-rose-300 text-rose-700 hover:bg-rose-50'
+                                        }`}
+                                    >
+                                        <i className="fas fa-exclamation-triangle mr-1"></i> Instável
+                                    </button>
+                                    <button 
+                                        onClick={() => setBradyUnstable(false)}
+                                        className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                            bradyUnstable === false 
+                                                ? 'bg-emerald-500 border-emerald-400 text-white ring-2 ring-emerald-300' 
+                                                : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                        }`}
+                                    >
+                                        <i className="fas fa-check mr-1"></i> Estável
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Unstable Branch */}
+                            {bradyUnstable === true && (
+                                <div className="bg-red-50 border-2 border-red-400 rounded-xl p-3 shadow-sm">
+                                    <h3 className="font-bold text-red-800 text-sm flex items-center gap-2 mb-1.5">
+                                        <i className="fas fa-arrow-right"></i>
+                                        Instável: Intervenção Imediata
+                                    </h3>
+                                    
+                                    {/* Atropine - Action Box */}
+                                    <div className="bg-blue-100 border-2 border-blue-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <i className="fas fa-syringe text-blue-700"></i>
+                                            <span className="font-bold text-blue-800 text-sm">Atropina</span>
+                                        </div>
+                                        <p className="text-[10px] text-blue-700 font-medium mb-1">0.5mg IV a cada 3-5 min (máx 3mg)</p>
+                                        <button 
+                                            onClick={() => handleAction('therapy', 'Atropina')}
+                                            disabled={atropineGiven}
+                                            className={`w-full py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                atropineGiven
+                                                    ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                    : 'bg-white border-blue-300 text-blue-700 hover:bg-blue-50'
+                                            }`}
+                                        >
+                                            {atropineGiven ? 'Atropina Administrada ✓' : 'Administrar Atropina 0.5mg IV'}
+                                        </button>
+                                    </div>
+
+                                    {/* Pacemaker */}
+                                    <div className="bg-green-100 border-2 border-green-500 rounded-xl p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <i className="fas fa-bolt text-green-700"></i>
+                                            <span className="font-bold text-green-800 text-sm">Marca-passo Transcutâneo</span>
+                                        </div>
+                                        <p className="text-[10px] text-green-700 font-medium mb-1">Se atropina ineficaz, iniciar marca-passo</p>
+                                        <button 
+                                            onClick={() => handleAction('intervention', 'Marca-passo transcutâneo')}
+                                            disabled={pacerPlaced}
+                                            className={`w-full py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                pacerPlaced
+                                                    ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                    : 'bg-white border-green-300 text-green-700 hover:bg-green-50'
+                                            }`}
+                                        >
+                                            {pacerPlaced ? 'Marca-passo Ativo ✓' : 'Iniciar Marca-passo'}
+                                        </button>
+                                    </div>
+
+                                    {/* Bridge: Infusões se MP indisponível ou instabilidade persistir */}
+                                    <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <i className="fas fa-syringe text-amber-700"></i>
+                                            <span className="font-bold text-amber-800 text-sm">Infusão Contínua (se MP indisponível)</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            <button 
+                                                onClick={() => handleAction('therapy', 'Epinefrina BIC')}
+                                                disabled={epinefrinaBicGiven}
+                                                className={`py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                    epinefrinaBicGiven
+                                                        ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                        : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'
+                                                }`}
+                                            >
+                                                {epinefrinaBicGiven ? 'Epinefrina BIC ✓' : 'Epinefrina BIC'}
+                                                <span className="block text-[9px] font-medium">2-10 mcg/min</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleAction('therapy', 'Dopamina BIC')}
+                                                disabled={dopaminaBicGiven}
+                                                className={`py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                    dopaminaBicGiven
+                                                        ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                        : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'
+                                                }`}
+                                            >
+                                                {dopaminaBicGiven ? 'Dopamina BIC ✓' : 'Dopamina BIC'}
+                                                <span className="block text-[9px] font-medium">5-20 mcg/kg/min</span>
+                                            </button>
+                                        </div>
+                                        {pacerPlaced && (
+                                            <p className="text-[10px] text-amber-700 font-medium mt-1.5">
+                                                <i className="fas fa-info-circle mr-1"></i>
+                                                MP ativo. Infusões se instabilidade persistir. Solicitar MP definitivo.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stable Branch */}
+                            {bradyUnstable === false && (
+                                <div className="bg-emerald-50 border-2 border-emerald-400 rounded-xl p-3 shadow-sm">
+                                    <h3 className="font-bold text-emerald-800 text-sm flex items-center gap-2 mb-1">
+                                        <i className="fas fa-check-circle"></i>
+                                        Estável: Monitorização
+                                    </h3>
+                                    <div className="space-y-1">
+                                        <div className="bg-white border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
+                                            <i className="fas fa-monitor text-emerald-500"></i>
+                                            <span className="text-xs font-medium text-slate-700">Monitorização contínua do ritmo</span>
+                                        </div>
+                                        <div className="bg-white border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
+                                            <i className="fas fa-chart-line text-emerald-500"></i>
+                                            <span className="text-xs font-medium text-slate-700">Observar sinais de instabilidade</span>
+                                        </div>
+                                        <div className="bg-white border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
+                                            <i className="fas fa-search text-emerald-500"></i>
+                                            <span className="text-xs font-medium text-slate-700">Investigar causa base (H's e T's)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Search causes */}
+                            <button 
+                                onClick={() => setActiveTab('causa')}
+                                className="w-full bg-amber-50 border-2 border-amber-300 rounded-xl p-3 font-bold text-xs text-amber-800 hover:bg-amber-100 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                <i className="fas fa-search"></i>
+                                Investigar Causas Reversíveis (H's e T's)
+                            </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'relatorio' && renderReportBody()}
+                    {activeTab === 'causa' && renderCausaBody()}
+                </div>
+            );
+
+            // ── TACHYCARDIA PROCEDURE ──
+            const renderTachycardiaProcedure = () => (
+                <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col relative">
+                    {activeTab === 'procedimento' && (
+                        <div className="p-2 flex flex-col flex-1 gap-1.5 animate-fade-in min-h-0 overflow-y-auto hide-scrollbar">
+                            {/* Initial Assessment - Orange */}
+                            <div className="bg-orange-100 border-2 border-orange-400 rounded-xl p-3 shadow-sm">
+                                <h3 className="font-bold text-orange-900 text-sm flex items-center gap-2 mb-1">
+                                    <i className="fas fa-clipboard-list"></i>
+                                    Avaliação Inicial
+                                </h3>
+                                <p className="text-[11px] text-orange-800 font-medium">
+                                    FC &gt; 150 bpm · Avaliar sinais e sintomas de instabilidade
+                                </p>
+                            </div>
+
+                            {/* Decision: Unstable? - Rose */}
+                            <div className="bg-rose-100 border-2 border-rose-500 rounded-xl p-3 shadow-sm text-center">
+                                <div className="text-[10px] font-bold text-rose-700 uppercase tracking-wider mb-1">Decisão</div>
+                                <p className="font-bold text-rose-900 text-sm">Paciente instável?</p>
+                                <p className="text-[10px] text-rose-700 mb-2">Hipotensão, alteração do nível de consciência, dor torácica, sinais de choque</p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setTachyUnstable(true)}
+                                        className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                            tachyUnstable === true 
+                                                ? 'bg-rose-500 border-rose-400 text-white ring-2 ring-rose-300' 
+                                                : 'bg-white border-rose-300 text-rose-700 hover:bg-rose-50'
+                                        }`}
+                                    >
+                                        <i className="fas fa-exclamation-triangle mr-1"></i> Instável
+                                    </button>
+                                    <button 
+                                        onClick={() => setTachyUnstable(false)}
+                                        className={`flex-1 py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                            tachyUnstable === false 
+                                                ? 'bg-emerald-500 border-emerald-400 text-white ring-2 ring-emerald-300' 
+                                                : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                        }`}
+                                    >
+                                        <i className="fas fa-check mr-1"></i> Estável
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Unstable Tachycardia */}
+                            {tachyUnstable === true && (
+                                <div className="bg-red-50 border-2 border-red-400 rounded-xl p-3 shadow-sm">
+                                    <h3 className="font-bold text-red-800 text-sm flex items-center gap-2 mb-1.5">
+                                        <i className="fas fa-arrow-right"></i>
+                                        Instável: Cardioversão Imediata
+                                    </h3>
+                                    
+                                    {/* Cardioversion - Critical Action */}
+                                    <div className="bg-white border-2 border-red-500 rounded-xl p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <i className="fas fa-bolt text-red-600 text-lg"></i>
+                                            <span className="text-red-600 font-bold text-sm">CARDIOVERSÃO SINCRONIZADA</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1 mb-1.5">
+                                            {['FA Flutter 120-200J', 'TV Monomórfica 100J'].map(target => (
+                                                <div key={target} className="bg-red-50 border border-red-200 rounded-lg p-1.5 text-[10px] font-medium text-red-700 text-center">
+                                                    {target}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button 
+                                            onClick={() => handleAction('intervention', 'Cardioversão sincronizada')}
+                                            disabled={cardioversionDone}
+                                            className={`w-full py-3 rounded-lg font-bold text-sm border-2 transition-all active:scale-95 ${
+                                                cardioversionDone
+                                                    ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                    : 'animate-pulse-urgent bg-red-500 border-red-400 text-white'
+                                            }`}
+                                        >
+                                            {cardioversionDone ? 'Cardioversão Realizada ✓' : '▶ REALIZAR CARDIOVERSÃO AGORA'}
+                                        </button>
+                                    </div>
+
+                                    {cardioversionDone && (
+                                        <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                                            <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                                                <i className="fas fa-info-circle"></i>
+                                                Se TV sem pulso → seguir algoritmo de Parada Cardíaca. Se ritmo persiste, repetir cardioversão com carga maior.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Stable Tachycardia */}
+                            {tachyUnstable === false && (
+                                <div className="bg-emerald-50 border-2 border-emerald-400 rounded-xl p-3 shadow-sm">
+                                    <h3 className="font-bold text-emerald-800 text-sm flex items-center gap-2 mb-1.5">
+                                        <i className="fas fa-heart"></i>
+                                        Estável: Identificar o Ritmo
+                                    </h3>
+                                    
+                                    {/* Narrow vs Wide */}
+                                    <div className="bg-white border-2 border-slate-200 rounded-xl p-3 shadow-sm mb-1.5">
+                                        <p className="text-xs font-bold text-slate-600 mb-1.5">QRS:</p>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => setTachyType('narrow')}
+                                                className={`flex-1 py-3 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                    tachyType === 'narrow' 
+                                                        ? 'bg-blue-500 border-blue-400 text-white ring-2 ring-blue-300' 
+                                                        : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <i className="fas fa-wave-square block text-sm mb-0.5"></i>
+                                                Estreito (&lt;0.12s)
+                                            </button>
+                                            <button 
+                                                onClick={() => setTachyType('wide')}
+                                                className={`flex-1 py-3 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                    tachyType === 'wide' 
+                                                        ? 'bg-blue-500 border-blue-400 text-white ring-2 ring-blue-300' 
+                                                        : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <i className="fas fa-wave-square block text-sm mb-0.5"></i>
+                                                Largo (&ge;0.12s)
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Narrow Complex */}
+                                    {tachyType === 'narrow' && (
+                                        <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 shadow-sm">
+                                            <h3 className="font-bold text-blue-800 text-xs mb-1.5">QRS Estreito: Taquicardia Supraventricular</h3>
+                                            
+                                            <div className="bg-white border-2 border-blue-500 rounded-xl p-3 mb-1.5 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-hand text-blue-700"></i>
+                                                    <span className="font-bold text-blue-800 text-sm">Manobras Vagais</span>
+                                                </div>
+                                                <p className="text-[10px] text-blue-700 font-medium mb-1.5">Manobra de Valsalva ou massagem carotídea</p>
+                                                <button 
+                                                    onClick={() => handleAction('intervention', 'Manobras vagais')}
+                                                    disabled={vagalManeuverDone}
+                                                    className={`w-full py-2 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                        vagalManeuverDone
+                                                            ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                            : 'bg-white border-blue-300 text-blue-700 hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {vagalManeuverDone ? 'Manobras Vagais ✓' : 'Realizar Manobras Vagais'}
+                                                </button>
+                                            </div>
+
+                                            <div className="bg-green-100 border-2 border-green-500 rounded-xl p-3 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-syringe text-green-700"></i>
+                                                    <span className="font-bold text-green-800 text-sm">Adenosina</span>
+                                                </div>
+                                                <p className="text-[10px] text-green-700 font-medium mb-1">6mg IV push rápido, seguido de 12mg se necessário</p>
+                                                <button 
+                                                    onClick={() => handleAction('therapy', 'Adenosina')}
+                                                    disabled={adenosineGiven}
+                                                    className={`w-full py-2.5 rounded-lg font-bold text-xs border-2 transition-all active:scale-95 ${
+                                                        adenosineGiven
+                                                            ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'
+                                                            : 'bg-white border-green-300 text-green-700 hover:bg-green-50'
+                                                    }`}
+                                                >
+                                                    {adenosineGiven ? 'Adenosina Administrada ✓' : 'Administrar Adenosina 6mg IV'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Wide Complex */}
+                                    {tachyType === 'wide' && (
+                                        <div className="bg-purple-50 border-2 border-purple-400 rounded-xl p-3 shadow-sm">
+                                            <h3 className="font-bold text-purple-800 text-xs mb-1.5">QRS Largo: TV monomórfica estável</h3>
+                                            
+                                            <div className="bg-blue-100 border-2 border-blue-500 rounded-xl p-3 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <i className="fas fa-syringe text-blue-700"></i>
+                                                    <span className="font-bold text-blue-800 text-sm">Amiodarona</span>
+                                                </div>
+                                                <p className="text-[10px] text-blue-700 font-medium mb-1.5">150mg IV em 10 min (pode repetir)</p>
+                                                <button 
+                                                    onClick={() => handleAction('therapy', 'Amiodarona')}
+                                                    className="w-full py-2.5 rounded-lg font-bold text-xs border-2 bg-white border-blue-300 text-blue-700 hover:bg-blue-50 transition-all active:scale-95"
+                                                >
+                                                    Administrar Amiodarona
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {tachyType && (
+                                        <button 
+                                            onClick={() => setActiveTab('causa')}
+                                            className="w-full mt-1 bg-amber-50 border-2 border-amber-300 rounded-xl p-3 font-bold text-xs text-amber-800 hover:bg-amber-100 transition-all active:scale-95 flex items-center gap-2"
+                                        >
+                                            <i className="fas fa-search"></i>
+                                            Investigar Causas Reversíveis (H's e T's)
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'relatorio' && renderReportBody()}
+                    {activeTab === 'causa' && renderCausaBody()}
+                </div>
+            );
+
+            // ── REPORT BODY (shared) ──
+            const renderReportBody = () => (
+                <div className="flex-1 flex flex-col animate-fade-in hide-scrollbar min-h-0">
+                    {events.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 font-medium text-sm">Nenhum evento registrado ainda.</div>
+                    ) : (() => {
+                        const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
+                        const cycleMap = {};
+                        events.forEach(ev => {
+                            if (ev.type === 'system') return;
+                            const c = ev.cycle || Math.floor((parseInt(ev.elapsedTime.split(':')[0]) * 60 + parseInt(ev.elapsedTime.split(':')[1])) / CYCLE_DURATION) + 1;
+                            if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
+                            const row = cycleMap[c];
+                            if (ev.title.startsWith('Diagnosticado ')) {
+                                row.rhythm = ev.title.slice('Diagnosticado '.length);
+                            } else if (ev.title === 'Executado Desfibrilação') {
+                                row.shock = true;
+                            } else if (ev.title.startsWith('Executado ')) {
+                                const action = ev.title.slice('Executado '.length);
+                                if (drugsList.includes(action)) {
+                                    if (!row.drugs.includes(action)) row.drugs.push(action);
+                                } else {
+                                    if (!row.interventions.includes(action)) row.interventions.push(action);
+                                }
+                            }
+                        });
+                        const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                        return (
+                        <div className="flex-1 min-h-0 flex flex-col hide-scrollbar">
+                            <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
+                                <button onClick={handleCopyReport} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i className="fas fa-copy"></i> Copiar
+                                </button>
+                                <button onClick={handleDownloadReport} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i className="fas fa-download"></i> Baixar .txt
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto flex-1">
+                                <table className="w-full text-xs">
+                                    <thead className="bg-slate-100 sticky top-0 z-10">
+                                        <tr className="border-b border-slate-200">
+                                            <th className="p-2 text-left font-bold text-slate-500 w-10">#</th>
+                                            <th className="p-2 text-left font-bold text-slate-500">Ritmo</th>
+                                            <th className="p-2 text-center font-bold text-slate-500 w-12">Choque</th>
+                                            <th className="p-2 text-left font-bold text-slate-500">Drogas</th>
+                                            <th className="p-2 text-left font-bold text-slate-500">Interv.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {cycles.map(row => (
+                                            <tr key={row.cycle} className="bg-white hover:bg-slate-50 transition-colors">
+                                                <td className="p-2 font-bold text-slate-700 align-top">{row.cycle}</td>
+                                                <td className={`p-2 font-semibold align-top ${row.rhythm === 'FV / TVSP' ? 'text-red-600' : row.rhythm ? 'text-blue-600' : 'text-slate-300'}`}>{row.rhythm || '—'}</td>
+                                                <td className="p-2 text-center align-top">{row.shock ? <span className="text-amber-500 text-sm"><i className="fas fa-bolt"></i></span> : <span className="text-slate-200">—</span>}</td>
+                                                <td className="p-2 text-slate-600 align-top">{row.drugs.length ? row.drugs.join(', ') : <span className="text-slate-300">—</span>}</td>
+                                                <td className="p-2 text-slate-600 align-top">{row.interventions.length ? row.interventions.join(', ') : <span className="text-slate-300">—</span>}</td>
+                                            </tr>
                                         ))}
-                                    </div>
-                                </div>
-
-                                {diagnosis && (
-                                    <>
-                                        <div className="flex-[2] flex flex-col min-h-0">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Terapias</h3>
-                                            <div className="flex-1 grid grid-cols-3 gap-1 min-h-0">
-                                                {['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'].map((item, i) => {
-                                                    const isAmio = item === 'Amiodarona';
-                                                    const isAdr = item === 'Adrenalina';
-                                                    const amioLabel = amiodaroneDoseCount === 0 ? 'Amiodarona 300mg' : amiodaroneDoseCount === 1 ? 'Amiodarona 150mg' : 'Amiodarona';
-                                                    let blinkClass = '';
-                                                    if (isAmio && suggestedAction === 'amiodarona') blinkClass = 'animate-blink bg-purple-500 border-purple-400 text-white font-bold ring-2 ring-purple-300';
-                                                    else if (isAdr && suggestedAction === 'adrenalina') blinkClass = 'animate-blink bg-blue-500 border-blue-400 text-white font-bold ring-2 ring-blue-300';
-                                                    else if (isAdr) blinkClass = 'bg-blue-50 border-blue-200 text-blue-700 font-bold hover:bg-blue-100';
-                                                    else if (isAmio) blinkClass = 'bg-purple-50 border-purple-200 text-purple-700 font-bold hover:bg-purple-100';
-                                                    else blinkClass = 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300';
-                                                    return (
-                                                    <button 
-                                                        key={item}
-                                                        onClick={() => handleAction('therapy', item)}
-                                                        className={`h-full w-full rounded-lg font-semibold text-xs border active:scale-95 transition-all ${blinkClass}`}
-                                                    >
-                                                        {isAmio ? amioLabel : item}
-                                                    </button>
-                                                );})}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex-1 flex flex-col min-h-0">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Intervenções</h3>
-                                            <div className="flex-1 grid grid-cols-2 gap-1 min-h-0">
-                                                {['Desfibrilação', 'IOT', 'Atropina', 'Trombolítico'].map(item => (
-                                                    <button 
-                                                        key={item}
-                                                        onClick={() => handleAction('intervention', item)}
-                                                        className={`h-full w-full rounded-lg font-semibold text-xs border active:scale-95 transition-all ${item === 'Desfibrilação' ? suggestedAction === 'desfribilacao' ? 'animate-blink bg-red-500 border-red-400 text-white font-bold ring-2 ring-red-300' : 'bg-orange-50 border-orange-200 text-orange-700 font-bold hover:bg-orange-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
-                                                    >
-                                                        {item}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'relatorio' && (
-                            <div className="flex-1 flex flex-col animate-fade-in hide-scrollbar min-h-0">
-                                {events.length === 0 ? (
-                                    <div className="p-8 text-center text-slate-400 font-medium text-sm">Nenhum evento registrado ainda.</div>
-                                ) : (() => {
-                                    const drugsList = ['Adrenalina', 'Amiodarona', 'Bic. Sódio', 'Cálcio', 'Magnésio', 'Lidocaína', 'Potássio', 'Volume'];
-                                    const cycleMap = {};
-                                    events.forEach(ev => {
-                                        if (ev.type === 'system') return;
-                                        const c = ev.cycle || Math.floor((parseInt(ev.elapsedTime.split(':')[0]) * 60 + parseInt(ev.elapsedTime.split(':')[1])) / CYCLE_DURATION) + 1;
-                                        if (!cycleMap[c]) cycleMap[c] = { cycle: c, rhythm: '', shock: false, drugs: [], interventions: [] };
-                                        const row = cycleMap[c];
-                                        if (ev.title.startsWith('Diagnosticado ')) {
-                                            row.rhythm = ev.title.slice('Diagnosticado '.length);
-                                        } else if (ev.title === 'Executado Desfibrilação') {
-                                            row.shock = true;
-                                        } else if (ev.title.startsWith('Executado ')) {
-                                            const action = ev.title.slice('Executado '.length);
-                                            if (drugsList.includes(action)) {
-                                                if (!row.drugs.includes(action)) row.drugs.push(action);
-                                            } else {
-                                                if (!row.interventions.includes(action)) row.interventions.push(action);
-                                            }
-                                        }
-                                    });
-                                    const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
-                                    return (
-                                    <div className="flex-1 min-h-0 hide-scrollbar">
-                                        <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
-                                            <button onClick={handleCopyReport} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
-                                                <i className="fas fa-copy"></i> Copiar
-                                            </button>
-                                            <button onClick={handleDownloadReport} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
-                                                <i className="fas fa-download"></i> Baixar .txt
-                                            </button>
-                                        </div>
-                                        <table className="w-full text-xs">
-                                            <thead className="bg-slate-100">
-                                                <tr className="border-b border-slate-200">
-                                                    <th className="p-2 text-left font-bold text-slate-500 w-10">#</th>
-                                                    <th className="p-2 text-left font-bold text-slate-500">Ritmo</th>
-                                                    <th className="p-2 text-center font-bold text-slate-500 w-12">Choque</th>
-                                                    <th className="p-2 text-left font-bold text-slate-500">Drogas</th>
-                                                    <th className="p-2 text-left font-bold text-slate-500">Interv.</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {cycles.map(row => (
-                                                    <tr key={row.cycle} className="bg-white hover:bg-slate-50 transition-colors">
-                                                        <td className="p-2 font-bold text-slate-700 align-top">{row.cycle}</td>
-                                                        <td className={`p-2 font-semibold align-top ${row.rhythm === 'FV / TVSP' ? 'text-red-600' : row.rhythm ? 'text-blue-600' : 'text-slate-300'}`}>{row.rhythm || '—'}</td>
-                                                        <td className="p-2 text-center align-top">{row.shock ? <span className="text-amber-500 text-sm"><i className="fas fa-bolt"></i></span> : <span className="text-slate-200">—</span>}</td>
-                                                        <td className="p-2 text-slate-600 align-top">{row.drugs.length ? row.drugs.join(', ') : <span className="text-slate-300">—</span>}</td>
-                                                        <td className="p-2 text-slate-600 align-top">{row.interventions.length ? row.interventions.join(', ') : <span className="text-slate-300">—</span>}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                        <div className="p-2 bg-amber-50 border-t border-amber-200 text-[10px] text-amber-700 font-medium text-center leading-relaxed">
-                                            <i className="fas fa-info-circle mr-1"></i>
-                                            Dados salvos automaticamente no cache do navegador. O cache é um armazenamento temporário — os dados podem ser perdidos se você limpar o cache ou usar outro dispositivo/navegador.
-                                        </div>
-                                    </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-
-                        {activeTab === 'causa' && (
-                            <div className="flex-1 flex flex-col animate-fade-in min-h-0">
-                                <div className="overflow-y-auto flex-1 min-h-0 p-3 hide-scrollbar">
-                                    <div className="bg-blue-50 text-blue-800 p-3 rounded-xl text-xs font-medium shadow-sm border border-blue-100">
-                                        Selecione a possível causa reversível para visualizar orientações no pós-RCP.
-                                    </div>
-                                    <div className="mt-3">
-                                        <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
-                                        <div className="space-y-1.5">
-                                            {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
-                                                <button 
-                                                    key={causa} 
-                                                    onClick={() => setCausaSuspeita(causa)}
-                                                    className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <span>{causa}</span>
-                                                        {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="mt-3">
-                                        <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
-                                        <div className="space-y-1.5">
-                                            {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
-                                                <button 
-                                                    key={causa} 
-                                                    onClick={() => setCausaSuspeita(causa)}
-                                                    className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <span>{causa}</span>
-                                                        {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    </tbody>
+                                </table>
+                                <div className="p-2 bg-amber-50 border-t border-amber-200 text-[10px] text-amber-700 font-medium text-center leading-relaxed">
+                                    <i className="fas fa-info-circle mr-1"></i>
+                                    Dados salvos automaticamente no cache do navegador.
                                 </div>
                             </div>
+                        </div>
+                        );
+                    })()}
+                </div>
+            );
+
+            // ── CAUSA BODY (shared) ──
+            const renderCausaBody = () => (
+                <div className="flex-1 flex flex-col animate-fade-in min-h-0">
+                    <div className="overflow-y-auto flex-1 min-h-0 p-3 hide-scrollbar">
+                        <div className="bg-amber-50 text-amber-800 p-3 rounded-xl text-xs font-medium shadow-sm border border-amber-100">
+                            Selecione a possível causa reversível. O diagnóstico selecionado será vinculado aos cuidados pós-RCP.
+                        </div>
+                        {selectedScenario !== 'cardiacArrest' && (
+                            <div className="mt-2 bg-blue-50 text-blue-800 p-2.5 rounded-xl text-xs font-medium border border-blue-100">
+                                <i className="fas fa-info-circle mr-1"></i>
+                                Causas reversíveis devem ser investigadas e tratadas durante a estabilização.
+                            </div>
                         )}
+                        <div className="mt-3">
+                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (H's)</h3>
+                            <div className="space-y-1.5">
+                                {['Hipovolemia', 'Hipóxia', 'Hidrogênio (acidose)', 'Hipo/Hipercalemia', 'Hipotermia'].map(causa => (
+                                    <button 
+                                        key={causa} 
+                                        onClick={() => setCausaSuspeita(causa)}
+                                        className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <span>{causa}</span>
+                                            {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Causas Reversíveis (T's)</h3>
+                            <div className="space-y-1.5">
+                                {['Tensão no tórax (Pneumotórax)', 'Tamponamento cardíaco', 'Toxinas', 'Trombose pulmonar', 'Trombose coronariana'].map(causa => (
+                                    <button 
+                                        key={causa} 
+                                        onClick={() => setCausaSuspeita(causa)}
+                                        className={`w-full py-2.5 px-4 text-left rounded-xl font-semibold text-xs border shadow-sm transition-all ${causaSuspeita === causa ? 'bg-blue-600 border-blue-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <span>{causa}</span>
+                                            {causaSuspeita === causa && <i className="fas fa-check-circle text-xs"></i>}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // ── PROCEDURE ROUTER ──
+            const renderProcedure = () => (
+                <div className="flex flex-col h-full bg-slate-900 w-full max-w-md mx-auto relative">
+                    {renderTopBar()}
+                    
+                    <div className="flex-1 overflow-hidden flex flex-col relative">
+                        {selectedScenario === 'cardiacArrest' && renderCardiacArrestProcedure()}
+                        {selectedScenario === 'bradycardia' && renderBradycardiaProcedure()}
+                        {selectedScenario === 'tachycardia' && renderTachycardiaProcedure()}
                     </div>
                     
-                    {/* Navegação Inferior */}
+                    {/* Bottom Navigation */}
                     <div className="flex bg-slate-900 text-slate-500 text-[10px] font-bold uppercase tracking-wider pb-safe border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
                         {[
-                            { id: 'procedimento', label: 'Procedimento', icon: 'fa-stethoscope' }, 
+                            { id: 'procedimento', label: 'Algoritmo', icon: 'fa-stethoscope' }, 
                             { id: 'relatorio', label: 'Relatório', icon: 'fa-list-alt' }, 
-                            { id: 'causa', label: 'Causa', icon: 'fa-search' }
+                            { id: 'causa', label: 'Causas', icon: 'fa-search' }
                         ].map(tab => (
                             <button 
                                 key={tab.id}
@@ -993,58 +1905,96 @@
                 </div>
             );
 
-            const renderPostCare = () => (
-                <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
-                    <header className="bg-slate-800 text-white p-5 flex items-center shadow-md z-10">
-                        <button onClick={() => setCurrentView('home')} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
-                            <i className="fas fa-times text-xl"></i>
-                        </button>
-                        <h1 className="text-lg font-bold flex-1 text-center pr-8 tracking-wide">Cuidados pós-RCP</h1>
-                    </header>
-                    
-                    <div className="flex-1 overflow-y-auto p-5 animate-fade-in hide-scrollbar">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 text-center">
-                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i className="fas fa-clipboard-check text-2xl"></i>
+            // ── POST-CARE ──
+            const renderPostCare = () => {
+                const causaInfo = POST_RCP_GUIDANCE[causaSuspeita];
+                return (
+                    <div className="flex flex-col h-full bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
+                        <header className="bg-slate-800 text-white p-5 flex items-center shadow-md z-10">
+                            <button onClick={() => { setCurrentView('home'); releaseWakeLock(); }} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                            <h1 className="text-lg font-bold flex-1 text-center pr-8 tracking-wide">Cuidados pós-RCP</h1>
+                        </header>
+                        
+                        <div className="flex-1 overflow-y-auto p-5 animate-fade-in hide-scrollbar">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 text-center">
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                                    procedureOutcome === 'rce' ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-blue-600'
+                                }`}>
+                                    <i className={`fas ${procedureOutcome === 'rce' ? 'fa-heart-pulse' : 'fa-clipboard-check'} text-2xl`}></i>
+                                </div>
+                                <h2 className="text-xl font-bold text-slate-800">
+                                    {procedureOutcome === 'rce' ? 'RCE Alcançado' : 'Causa Reversível'}
+                                </h2>
+                                <p className="text-sm font-medium mt-1">
+                                    {causaSuspeita ? (
+                                        <span className="text-blue-600">{causaSuspeita}</span>
+                                    ) : (
+                                        <span className="text-slate-400">Causa Reversível Não Definida</span>
+                                    )}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-2">Siga as instruções de acordo com a diretriz da AHA para estabilização inicial.</p>
                             </div>
-                            <h2 className="text-xl font-bold text-slate-800">{causaSuspeita || 'Causa Reversível Não Definida'}</h2>
-                            <p className="text-sm text-slate-500 mt-2 font-medium">Siga as instruções de acordo com a diretriz da AHA para estabilização inicial.</p>
+
+                            {/* Targeted guidance if cause selected */}
+                            {causaInfo && (
+                                <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 mb-4 shadow-sm">
+                                    <h3 className="font-bold text-green-800 text-sm flex items-center gap-2 mb-2">
+                                        <i className={`fas ${causaInfo.icon}`}></i>
+                                        {causaInfo.title}
+                                    </h3>
+                                    <p className="text-[10px] text-green-700 font-medium mb-2">Orientações específicas para esta causa:</p>
+                                    <div className="space-y-1.5">
+                                        {causaInfo.actions.map((action, idx) => (
+                                            <div key={idx} className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-green-200">
+                                                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                                                    <i className="fas fa-check text-[8px] text-green-600"></i>
+                                                </div>
+                                                <span className="text-xs font-medium text-slate-700">{action}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Generic care checklist */}
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Checklist Geral de Cuidados</h3>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100">
+                                {[
+                                    'Monitorize adequadamente os parâmetros vitais (monitorização cardíaca, PA, oximetria, temperatura e glicemia)',
+                                    'Obter ECG de 12 derivações',
+                                    'Manejo da via aérea (capnografia, SpO2 92-98%, PaCO2 35-45mmHg)',
+                                    'Controle hemodinâmico (PAS >90 mmHg ou PAM >65 mmHg)',
+                                    'Se comatoso: iniciar Controle Direcionado de Temperatura (32° a 36°C)',
+                                    'Avaliar transferência imediata para UTI ou Hemodinâmica'
+                                ].map((item, idx) => (
+                                    <div key={idx} className="flex p-4 items-start group hover:bg-slate-50 transition-colors">
+                                        <div className="mt-0.5 relative shrink-0">
+                                            <input type="checkbox" className="peer sr-only" id={`check-${idx}`} />
+                                            <label htmlFor={`check-${idx}`} className="block w-6 h-6 border-2 border-slate-300 rounded-full cursor-pointer peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
+                                                <i className="fas fa-check text-white text-xs opacity-0 peer-checked:opacity-100"></i>
+                                            </label>
+                                        </div>
+                                        <label htmlFor={`check-${idx}`} className="ml-3 text-slate-700 text-sm font-medium leading-relaxed cursor-pointer select-none">{item}</label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Checklist de Cuidados</h3>
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100">
-                            {[
-                                'Monitorize adequadamente os parâmetros vitais (monitorização cardíaca, PA, oximetria, temperatura e glicemia)',
-                                'Obter ECG de 12 derivações',
-                                'Manejo da via aérea (capnografia, SpO2 92-98%, PaCO2 35-45mmHg)',
-                                'Controle hemodinâmico (PAS >90 mmHg ou PAM >65 mmHg)',
-                                'Se comatoso: iniciar Controle Direcionado de Temperatura (32° a 36°C)',
-                                'Avaliar transferência imediata para UTI ou Hemodinâmica'
-                            ].map((item, idx) => (
-                                <div key={idx} className="flex p-4 items-start group hover:bg-slate-50 transition-colors">
-                                    <div className="mt-0.5 relative shrink-0">
-                                        <input type="checkbox" className="peer sr-only" id={`check-${idx}`} />
-                                        <label htmlFor={`check-${idx}`} className="block w-6 h-6 border-2 border-slate-300 rounded-full cursor-pointer peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
-                                            <i className="fas fa-check text-white text-xs opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </div>
-                                    <label htmlFor={`check-${idx}`} className="ml-3 text-slate-700 text-sm font-medium leading-relaxed cursor-pointer select-none">{item}</label>
-                                </div>
-                            ))}
+                        <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                            <button 
+                                onClick={handleSaveComplete} 
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2"
+                            >
+                                <i className="fas fa-save"></i> Salvar Relatório
+                            </button>
                         </div>
                     </div>
-                    
-                    <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-                        <button 
-                            onClick={handleSaveComplete} 
-                            className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2"
-                        >
-                            <i className="fas fa-save"></i> Salvar Relatório
-                        </button>
-                    </div>
-                </div>
-            );
+                );
+            };
 
+            // ── REPORT VIEW ──
             const renderReportView = () => {
                 if (!viewingReport) return null;
                 const rep = viewingReport;
@@ -1065,6 +2015,9 @@
                     }
                 });
                 const cycles = Object.values(cycleMap).sort((a, b) => a.cycle - b.cycle);
+                const scenarioLabel = SCENARIO_LABELS[rep.scenario] || '—';
+                const outcomeLabel = rep.outcome === 'rce' ? 'RCE (Retorno da Circulação Espontânea)' : rep.outcome === 'obito' ? 'Óbito' : rep.outcome === 'resolucao' ? 'Resolução (ritmo normalizado)' : rep.outcome === 'evolucao_parada' ? 'Evoluiu para Parada Cardíaca' : '—';
+                const outcomeColor = rep.outcome === 'rce' ? 'text-green-600' : rep.outcome === 'obito' ? 'text-red-600' : rep.outcome === 'resolucao' ? 'text-emerald-600' : rep.outcome === 'evolucao_parada' ? 'text-amber-600' : 'text-slate-400';
                 return (
                     <div className="flex flex-col h-dynamic bg-slate-50 w-full max-w-md mx-auto shadow-2xl relative">
                         <header className="bg-slate-800 text-white p-4 flex items-center shadow-md z-10">
@@ -1073,10 +2026,21 @@
                             </button>
                             <div className="flex-1 text-center">
                                 <h1 className="text-sm font-bold tracking-wide">Relatório {d.toLocaleDateString('pt-BR')}</h1>
-                                <p className="text-[10px] text-slate-400 font-medium">{rep.diagnosis || '—'} &middot; {rep.totalTime ? formatTime(rep.totalTime) : '—'}</p>
+                                <p className="text-[10px] text-slate-400 font-medium">{scenarioLabel} &middot; {rep.diagnosis || '—'} &middot; {rep.totalTime ? formatTime(rep.totalTime) : '—'}</p>
                             </div>
                             <div className="w-8"></div>
                         </header>
+                        <div className="px-4 py-2 bg-white border-b border-slate-100 flex items-center gap-2">
+                            <span className={`text-xs font-bold ${outcomeColor}`}>
+                                <i className={`fas ${rep.outcome === 'rce' ? 'fa-heart-pulse' : rep.outcome === 'obito' ? 'fa-cross' : rep.outcome === 'resolucao' ? 'fa-check' : rep.outcome === 'evolucao_parada' ? 'fa-heart-circle-exclamation' : 'fa-minus'} mr-1`}></i>
+                                {outcomeLabel}
+                            </span>
+                            {rep.causaSuspeita && (
+                                <span className="text-xs text-blue-600 font-medium ml-auto">
+                                    <i className="fas fa-search mr-1"></i>{rep.causaSuspeita}
+                                </span>
+                            )}
+                        </div>
                         <div className="flex-1 overflow-y-auto hide-scrollbar">
                             <div className="flex gap-1.5 p-2 bg-slate-100 border-b border-slate-200">
                                 <button onClick={() => { const t = generateReportText(rep.events, rep.date); navigator.clipboard.writeText(t).catch(() => {}); }} className="flex-1 py-2 rounded-lg font-bold text-xs bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
@@ -1112,7 +2076,7 @@
                                 <div className="text-[10px] text-slate-400 font-medium leading-relaxed">
                                     <p><span className="font-bold text-slate-500">Eventos:</span> {rep.events.length} registros</p>
                                     <p><span className="font-bold text-slate-500">Duração total:</span> {rep.totalTime ? formatTime(rep.totalTime) : '—'}</p>
-                                    <p className="mt-2 text-amber-600"><i className="fas fa-info-circle mr-1"></i>Dados salvos no cache do navegador. O cache é um armazenamento temporário — os dados podem ser perdidos se você limpar o cache ou usar outro dispositivo.</p>
+                                    <p className="mt-2 text-amber-600"><i className="fas fa-info-circle mr-1"></i>Dados salvos no cache do navegador.</p>
                                 </div>
                             </div>
                         </div>
@@ -1128,6 +2092,15 @@
                     {!viewingReport && currentView === 'postCare' && renderPostCare()}
                     
                     <Modal {...modalConfig} />
+                    <OutcomeModal 
+                        show={outcomeModal}
+                        scenario={selectedScenario}
+                        onRCE={handleOutcomeRCE}
+                        onObito={handleOutcomeObito}
+                        onResolucao={handleOutcomeResolucao}
+                        onEvolucaoParada={handleOutcomeEvolucaoParada}
+                        onCancel={() => setOutcomeModal(false)}
+                    />
                 </>
             );
         };

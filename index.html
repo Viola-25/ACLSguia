@@ -368,7 +368,7 @@
             const [events, setEvents] = useState([]);
             const [procedureOutcome, setProcedureOutcome] = useState(null);
             
-            const [isMuted, setIsMuted] = useState(true);
+            const [isMuted, setIsMuted] = useState(false);
             const [bpm, setBpm] = useState(BPM_DEFAULT);
             const [modalConfig, setModalConfig] = useState({ show: false });
             const [outcomeModal, setOutcomeModal] = useState(false);
@@ -442,7 +442,7 @@
                                 osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
                                 
                                 gain.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
-                                gain.gain.linearRampToValueAtTime(0.5, audioCtxRef.current.currentTime + 0.01);
+                                gain.gain.linearRampToValueAtTime(1.0, audioCtxRef.current.currentTime + 0.01);
                                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.15);
                                 
                                 osc.start(audioCtxRef.current.currentTime);
@@ -853,7 +853,7 @@
                     osc.type = urgent ? 'sawtooth' : 'sine';
                     osc.frequency.setValueAtTime(urgent ? 880 : 660, ctx.currentTime);
                     if (urgent) {
-                        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                        gain.gain.setValueAtTime(1.0, ctx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
                         osc.start(ctx.currentTime);
                         osc.stop(ctx.currentTime + 0.3);
@@ -864,13 +864,13 @@
                             gain2.connect(ctx.destination);
                             osc2.type = 'sawtooth';
                             osc2.frequency.setValueAtTime(1100, ctx.currentTime);
-                            gain2.gain.setValueAtTime(0.4, ctx.currentTime);
+                            gain2.gain.setValueAtTime(1.0, ctx.currentTime);
                             gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
                             osc2.start(ctx.currentTime);
                             osc2.stop(ctx.currentTime + 0.4);
                         }, 200);
                     } else {
-                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.setValueAtTime(0.8, ctx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
                         osc.start(ctx.currentTime);
                         osc.stop(ctx.currentTime + 0.15);
@@ -1254,7 +1254,7 @@
                             )}
                             
                             {/* Rhythm Selection */}
-                            <div className="flex flex-col min-h-0">
+                            <div className="flex flex-col shrink-0 sticky top-0 z-10 bg-slate-50 pt-0.5 pb-0.5">
                                 <h3 className="text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
                                     {suggestedAction === 'reavaliar_ritmo' ? (
                                         <><span className="text-amber-600"><i className="fas fa-sync-alt animate-blink"></i></span><span className="text-amber-600">Reavaliar Ritmo</span></>
